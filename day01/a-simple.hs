@@ -1,7 +1,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-16.2 script
--- the above incantation makes this program runnable as a script; chmod a+rx day01.hs
--- to run: ./day01.hs < day01-input.txt
+-- the above incantation makes this program runnable as a script; chmod a+rx a-simple.hs
+-- to run: ./a-simple.hs < input.txt
 
 main = do
   input <- getContents                 -- this is the Haskell incantation to read from STDIN.
