@@ -11,5 +11,8 @@ main = do
       total   = sum fuels              -- then we take the sum across the output array
   print total                          -- and print it
 
+-- you read that right ... in theory, our unfoldr constructs an infinite list growing increasingly negative,
+-- but we only take the positive elements of that list,
+-- and we rely on Haskell's laziness to not actually recurse forever.
 fuelNeeded mass = sum (takeWhile (>=0) $ unfoldr (\x -> Just (x, trace (show x ++ " needs") (x `div` 3 - 2))) mass)
                   - mass
