@@ -1,0 +1,5 @@
+#+TITLE: Advent of Code 2019
+
+* Day 01: in which we show progressive evolution in style from one form of to another
+
+when you read other people's Haskell code you may encounter stylistic differences; I present this chrestomathy to help the beginner climb the learning curve of syntax constructs and conventions.

@@ -7,7 +7,9 @@ main = do
   input <- getContents                 -- this is the Haskell incantation to read from STDIN.
   let mylines = lines input            -- split input on \n, into an array of individual lines
       modules = map read mylines       -- in this script, read :: String -> Int
-      fuels   = map fuelNeeded modules -- for each module, what fuel is needed? see below.
+      fuels   = map  fuelNeeded modules -- for each module, what fuel is needed? see below.
+--    fuels   = fmap fuelNeeded modules -- another way of saying it
+--    fuels   = fuelNeeded <$> modules  -- yet another way of saying it, which you will see more of later
       total   = sum fuels              -- then we take the sum across the output array
   print total                          -- and print it
 
