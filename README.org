@@ -1,3 +1,5 @@
+
+
 * Run
 
 #+begin_src shell
@@ -10,3 +12,22 @@ should produce
 pos = [1,3,5,8]
 neg = [-2,-4,-6,-7]
 #+end_example
+
+* Installation
+
+#+begin_example
+npm i -g spago purescript
+#+end_example
+
+* Built
+
+Interestingly, the compiled JS output is runnable thusly:
+
+#+begin_example
+┌─[mengwong@rosegold] - [~/src/mengwong/adventofcode/output] - [2022-12-02 12:37:59]
+└─[0] <git:(fpMadeEasier 0af6a2a✈) > node -e "import('./Main/index.js').then(e => e.main())"
+pos = [1,3,5,8]
+neg = [-2,-4,-6,-7]
+#+end_example
+
+Not saying this is the right way to do it, mind you, I'm a JS newbie.
