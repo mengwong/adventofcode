@@ -1,5 +1,12 @@
-#+TITLE: Advent of Code 2019
+* Run
 
-* Day 01: in which we show progressive evolution in style from one form of to another
+#+begin_src shell
+spago run
+#+end_src
 
-when you read other people's Haskell code you may encounter stylistic differences; I present this chrestomathy to help the beginner climb the learning curve of syntax constructs and conventions.
+should produce
+
+#+begin_example
+pos = [1,3,5,8]
+neg = [-2,-4,-6,-7]
+#+end_example
