@@ -13,14 +13,15 @@ main = do
   -- [ (1, [11,22,33])
   -- , (2, [44,55,66]) ]
   putStr $ unlines $
-    ( showDwarf <$> fellowship) ++
+    ( showDwarf <$> fellowship) ++ [""] ++
     let sorted = reverse (sortBy (compare `on` (sum . snd)) fellowship)
-        fattest = uncons sorted
-    in [ maybe "there are no dwarves!"
-         (("the fattest " ++) . showDwarf . fst)
-         fattest ] ++
-       (showDwarf <$> take 3 sorted) ++
-       [ "together, the three fattest hold " ++ show (sum (snd <$> (fmap sum <$> (take 3 sorted)))) ++ " calories" ]
+        fattest = head sorted
+        n = 3
+    in [ "the fattest " ++ showDwarf fattest ] ++
+       (showDwarf <$> take n sorted) ++
+       [ "together, the " ++ show n ++ " fattest hold " ++
+         show (sum $ sum . snd <$> take n sorted) ++
+         " calories" ]
 
   where
     showDwarf (i,asInts) = "dwarf " ++ show i ++ " holds " ++ show (sum asInts) ++ " calories: " ++ show asInts
