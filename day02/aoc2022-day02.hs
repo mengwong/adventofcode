@@ -19,10 +19,10 @@ iplay Y = P
 iplay Z = S
 
 beats :: Play -> Play -> Bool
-beats R S = True
-beats P R = True
-beats S P = True
-beats _ _ = False
+R `beats` S = True
+P `beats` R = True
+S `beats` P = True
+_ `beats` _ = False
 
 data Outcome = Win | Lose | Draw deriving (Show, Read, Eq, Enum)
 
@@ -48,19 +48,21 @@ score u i = quantify (outcome u' i') + shape i'
 
 main :: IO ()
 main = do
-  input <- fmap words <$> lines <$> getContents
+  input <- lines <$> getContents
   let rounds = [ (u,i, score u i)
-               | plays <- input
-               , let u = read (plays !! 0)
-                     i = read (plays !! 1) ]
+               | line <- input
+               , let [u',i'] = words line -- wow this is so fragile
+                     u = read u'
+                     i = read i'
+               ]
   -- putStr $ unlines $ show <$> rounds
-  putStrLn $ "total score: " ++ show (sum [ s | (_,_,s) <- rounds ])
+  putStrLn $ "part 1: " ++ show (sum [ s | (_,_,s) <- rounds ])
   let part2 = [ (u,o,i, score u i)
               | (u,o,_) <- rounds
               , let i = brute u (desiredResult o)
               ]
   -- putStr $ unlines $ show <$> part2
-  putStrLn $ "total score: " ++ show (sum [ s | (_,_,_,s) <- part2 ])
+  putStrLn $ "part 2: " ++ show (sum [ s | (_,_,_,s) <- part2 ])
 
 desiredResult :: IPlay -> Outcome
 desiredResult X = Lose
