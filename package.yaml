@@ -1,0 +1,51 @@
+name:                adventofcode
+version:             0.1.0.0
+github:              "mengwong/adventofcode"
+license:             BSD3
+author:              "Meng Weng Wong"
+maintainer:          "mengwong@gmail.com"
+copyright:           "2022 WMW"
+
+extra-source-files:
+- README.org
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         My humble attempt at Advent of Code
+
+dependencies:
+- base >= 4.7 && < 5
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+executables:
+  day01:
+    main:                aoc2022-day01.hs
+    source-dirs:         apps
+    dependencies:
+      - split
+
+  day02:
+    main:                aoc2022-day02.hs
+    source-dirs:         apps
+
+  day03:
+    main:                aoc2022-day03.hs
+    source-dirs:         apps
+    dependencies:
+      - split
+
