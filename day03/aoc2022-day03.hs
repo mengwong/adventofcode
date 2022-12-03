@@ -3,21 +3,19 @@
 
 import Data.List.Split (chunksOf)
 import Data.Char (ord)
-import Data.Maybe (catMaybes, listToMaybe)
+import Data.Maybe (listToMaybe, mapMaybe)
 
 priority :: Char -> Int
-priority c = if   o >= ord 'a'
-             then o  - ord 'a' + 1
-             else o  - ord 'A' + 27
-  where o  = ord c
+priority c = if   ord c >= ord 'a'
+             then ord c  - ord 'a' + 1
+             else ord c  - ord 'A' + 27
 
 main :: IO ()
 main = do
   input <- lines <$> getContents
   print $ go [ chunksOf (length line `div` 2) line | line <- input ]
   print $ go ( chunksOf                    3                 input )
-  where
-    go xs = sum $ priority <$> catMaybes (common <$> xs)
+  where   go xs = sum $ priority <$> mapMaybe common xs
 
 -- which element is common to all the input lists?
 common :: (Eq a) => [[a]] -> Maybe a
