@@ -15,7 +15,7 @@ priority c = if   o >= ord 'a'
 main :: IO ()
 main = do
   input <- lines <$> getContents
-  let part1 = [ (lhs, rhs, repeated, repeated)
+  let part1 = [ (lhs, rhs, repeated)
                | line <- input
                , let halfLength = length line `div` 2
                      lhs = nub $ take halfLength line
@@ -23,7 +23,7 @@ main = do
                      repeated = inAll [lhs, rhs]
                ]
   -- putStr $ unlines $ show <$> part1
-  putStrLn $ "part 1: " ++ show (sum $ priority <$> catMaybes [ s | (_,_,_,s) <- part1 ])
+  putStrLn $ "part 1: " ++ show (sum $ priority <$> catMaybes [ s | (_,_,s) <- part1 ])
 
   putStrLn $ "part 2: " ++ show (sum $ priority <$> catMaybes (inAll <$> chunksOf 3 input))
 
