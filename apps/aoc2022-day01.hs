@@ -1,10 +1,10 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-20.2 script
 
-import Data.List
-import Data.Tuple
+import Data.List ( sortBy )
+import Data.Tuple ()
 import Data.Function (on)
-import Data.List.Split
+import Data.List.Split ( splitOn )
 
 main :: IO ()
 main = do
