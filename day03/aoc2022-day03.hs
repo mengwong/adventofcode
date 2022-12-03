@@ -30,3 +30,4 @@ main = do
 -- which element is common to all the lists?
 inAll :: (Eq a) => [[a]] -> Maybe a
 inAll (x:xs) = listToMaybe [ c | c <- x, all (c `elem`) xs ]
+inAll _ = Nothing
