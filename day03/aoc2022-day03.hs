@@ -21,5 +21,5 @@ main = do
 
 -- which element is common to all the input lists?
 common :: (Eq a) => [[a]] -> Maybe a
-common (x:xs) = listToMaybe [ c | c <- x, all (c `elem`) xs ]
+common (x:xs) = listToMaybe [ c | c <- x, (c `elem`) `all` xs ]
 common _ = Nothing
