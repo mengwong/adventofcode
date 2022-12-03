@@ -1,10 +1,9 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-19.33 script
 
-import Data.List
-import Data.List.Split
+import Data.List.Split (chunksOf)
 import Data.Char (ord)
-import Data.Maybe
+import Data.Maybe (catMaybes, listToMaybe)
 
 priority :: Char -> Int
 priority c = if   o >= ord 'a'
@@ -15,19 +14,12 @@ priority c = if   o >= ord 'a'
 main :: IO ()
 main = do
   input <- lines <$> getContents
-  let part1 = [ (lhs, rhs, repeated)
-               | line <- input
-               , let halfLength = length line `div` 2
-                     lhs = nub $ take halfLength line
-                     rhs = nub $ drop halfLength line
-                     repeated = inAll [lhs, rhs]
-               ]
-  -- putStr $ unlines $ show <$> part1
-  putStrLn $ "part 1: " ++ show (sum $ priority <$> catMaybes [ s | (_,_,s) <- part1 ])
+  print $ go [ chunksOf (length line `div` 2) line | line <- input ]
+  print $ go ( chunksOf                    3                 input )
+  where
+    go xs = sum $ priority <$> catMaybes (common <$> xs)
 
-  putStrLn $ "part 2: " ++ show (sum $ priority <$> catMaybes (inAll <$> chunksOf 3 input))
-
--- which element is common to all the lists?
-inAll :: (Eq a) => [[a]] -> Maybe a
-inAll (x:xs) = listToMaybe [ c | c <- x, all (c `elem`) xs ]
-inAll _ = Nothing
+-- which element is common to all the input lists?
+common :: (Eq a) => [[a]] -> Maybe a
+common (x:xs) = listToMaybe [ c | c <- x, all (c `elem`) xs ]
+common _ = Nothing
