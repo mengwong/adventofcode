@@ -20,6 +20,7 @@ description:         My humble attempt at Advent of Code
 
 dependencies:
 - base >= 4.7 && < 5
+- split
 
 ghc-options:
 - -Wall
@@ -36,8 +37,6 @@ executables:
   day01:
     main:                aoc2022-day01.hs
     source-dirs:         apps
-    dependencies:
-      - split
 
   day02:
     main:                aoc2022-day02.hs
@@ -46,6 +45,8 @@ executables:
   day03:
     main:                aoc2022-day03.hs
     source-dirs:         apps
-    dependencies:
-      - split
+
+  day04:
+    main:                aoc2022-day04.hs
+    source-dirs:         apps
 
