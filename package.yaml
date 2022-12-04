@@ -50,3 +50,8 @@ executables:
     main:                aoc2022-day04.hs
     source-dirs:         apps
 
+  day04-mp:
+    main:                aoc2022-day04-megaparsec.hs
+    source-dirs:         apps
+    dependencies:
+      - megaparsec
