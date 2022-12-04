@@ -19,7 +19,6 @@ main = do
   let elves = [ fmap (read :: String -> Int) . splitOn "-" <$> splitOn "," line | line <- input ]
   print $ length $ filter id [ orViceVersa elf1 contains elf2 | [elf1,elf2] <- elves ]
   print $ length $ filter id [ orViceVersa elf1 overlaps elf2 | [elf1,elf2] <- elves ]
-
-orViceVersa :: a -> (a -> a -> Bool) -> a -> Bool
-orViceVersa x f y = f x y || f y x
+  where orViceVersa :: a -> (a -> a -> Bool) -> a -> Bool
+        orViceVersa x f y = f x y || f y x
 
