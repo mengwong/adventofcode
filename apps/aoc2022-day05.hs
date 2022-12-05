@@ -18,13 +18,12 @@ type Stacks = Vector (Vector Char)
 main :: IO ()
 main = do
   [origStacks, origMoves] <- splitOn [""] . lines <$> getContents
-  let stripped = transpose $ reverse origStacks
-      stacksL  = "" : mapMaybe (parseMaybe ( int *> some upperChar <* space)) stripped
-      stacks   = fromList (fromList . reverse <$> stacksL) -- convert to Vector
+  let stripped = mapMaybe (parseMaybe (int *> some upperChar <* space)) (transpose $ reverse origStacks)
+      stacks   = fromList (fromList . reverse <$> "" : stripped) -- convert to Vector, rebase to 1-indexed
       moves    = mapMaybe (parseMaybe ((,,)
-                                       <$> (string "move " *> int <* space)
-                                       <*> (string "from " *> int <* space)
-                                       <*> (string "to "   *> int ))) origMoves
+                                       <$> (string  "move " *> int)
+                                       <*> (string " from " *> int)
+                                       <*> (string " to "   *> int) )) origMoves
   forM_ [moveBy (Just 1), moveBy Nothing] $ \m -> do
     let after = foldl' m stacks moves
     putStrLn $ toList (head <$> tail after)
