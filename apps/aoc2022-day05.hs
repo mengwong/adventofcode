@@ -24,8 +24,8 @@ main = do
                                        <$> (string  "move " *> int)
                                        <*> (string " from " *> int)
                                        <*> (string " to "   *> int) )) origMoves
-  forM_ [moveBy (Just 1), moveBy Nothing] $ \m -> do
-    let after = foldl' m stacks moves
+  forM_ [moveBy (Just 1), moveBy Nothing] $ \move -> do
+    let after = foldl' move stacks moves
     putStrLn $ toList (head <$> tail after)
 
 moveBy :: Maybe Int -> Stacks -> (Int, Int, Int) -> Stacks
