@@ -83,7 +83,7 @@ executable day04-mp
   default-language: Haskell2010
 
 executable day05
-  main-is: aoc2022-day04-megaparsec.hs
+  main-is: aoc2022-day05.hs
   other-modules:
       Paths_adventofcode
   hs-source-dirs:

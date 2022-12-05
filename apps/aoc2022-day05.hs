@@ -37,4 +37,5 @@ moveBy capacity orig (n, from, to)
   | otherwise = orig
   where cap = fromMaybe n capacity
 
-int :: Parser Int = read <$> some numberChar
+int :: Parser Int
+int = read <$> some numberChar
