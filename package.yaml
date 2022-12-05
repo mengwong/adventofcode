@@ -55,3 +55,10 @@ executables:
     source-dirs:         apps
     dependencies:
       - megaparsec
+
+  day05:
+    main:                aoc2022-day04-megaparsec.hs
+    source-dirs:         apps
+    dependencies:
+      - megaparsec
+      - vector
