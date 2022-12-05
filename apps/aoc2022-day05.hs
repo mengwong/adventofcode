@@ -4,7 +4,7 @@
 module Main where
 
 import Prelude       hiding (head, tail, drop, take)
-import Data.Vector   hiding (mapMaybe, forM_, reverse, foldl')
+import Data.Vector   hiding (mapMaybe, forM_, reverse, foldl', break, null)
 import Text.Megaparsec      (parseMaybe, many, some, Parsec)
 import Text.Megaparsec.Char (char, numberChar, upperChar, space, string)
 import Data.Maybe           (mapMaybe, fromMaybe)
@@ -17,7 +17,7 @@ type Stacks = Vector (Vector Char)
 
 main :: IO ()
 main = do
-  [origStacks, origMoves] <- splitOn [""] . lines <$> getContents
+  (origStacks, origMoves) <- break null . lines <$> getContents
   let stripped = mapMaybe (parseMaybe (int *> some upperChar <* space)) (transpose $ reverse origStacks)
       stacks   = fromList (fromList . reverse <$> "" : stripped) -- convert to Vector, rebase to 1-indexed
       moves    = mapMaybe (parseMaybe ((,,)
