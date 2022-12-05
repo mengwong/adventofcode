@@ -17,7 +17,7 @@ main :: IO ()
 main = do
   [origStacks, origMoves] <- splitOn [""] . lines <$> getContents
   let stripped = transpose $ reverse origStacks
-      stacksL  = "" : (mapMaybe (parseMaybe ( int *> some upperChar <* space)) stripped)
+      stacksL  = "" : mapMaybe (parseMaybe ( int *> some upperChar <* space)) strippedg
       stacks   = fromList (fromList . reverse <$> stacksL) -- convert to Vector
       moves    = mapMaybe (parseMaybe ((,,)
                                        <$> (string "move " *> int <* space)
