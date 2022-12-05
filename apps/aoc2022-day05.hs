@@ -1,7 +1,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-20.2 script
 
-import Prelude hiding (head, tail)
+import Prelude hiding (head, tail, drop, take)
 import Text.Megaparsec ( parseMaybe, many, some, sepBy1, Parsec, eof, (<|>) )
 import Text.Megaparsec.Char ( char, numberChar, upperChar, space, eol, string )
 import Data.Maybe (fromMaybe, mapMaybe)
@@ -25,18 +25,26 @@ main = do
                                      <$> (string "move " *> int <* space)
                                      <*> (string "from " *> int <* space)
                                      <*> (string "to "   *> int ))) origMoves
-      after = Prelude.foldl move stacks moves
-  print after
-  putStrLn $ Vec.toList (head <$> tail after)
+      after1 = Prelude.foldl move1 stacks moves
+      after2 = Prelude.foldl move2 stacks moves
+  print after1
+  putStrLn $ Vec.toList (head <$> tail after1)
+  print after2
+  putStrLn $ Vec.toList (head <$> tail after2)
 
 int :: Parser Int
 int = read <$> some numberChar
 
-move :: Stacks -> (Int, Int, Int) -> Stacks
-move orig (n, from, to)
+move1 :: Stacks -> (Int, Int, Int) -> Stacks
+move1 orig (n, from, to)
   | n > 0 = let new = orig // [(to,   cons (head (orig ! from)) (orig ! to))
                               ,(from,       tail (orig ! from))]
-            in move new (n-1, from, to)
+            in move1 new (n-1, from, to)
   | otherwise = orig
+
+move2 :: Stacks -> (Int, Int, Int) -> Stacks
+move2 orig (n, from, to) =
+  orig // [(to,   take n (orig ! from) <> (orig ! to))
+          ,(from, drop n (orig ! from))]
 
 
