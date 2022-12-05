@@ -1,7 +1,8 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-20.2 script
 
-import Text.Megaparsec ( parseMaybe, many, some, sepBy1, Parsec )
+module Main where
+import Text.Megaparsec ( parseMaybe, some, sepBy1, Parsec )
 import Text.Megaparsec.Char ( char, numberChar )
 import Data.Maybe (fromMaybe)
 

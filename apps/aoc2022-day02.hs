@@ -1,9 +1,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-19.33 script
 
-import Data.List
-import Control.Monad (when)
-
+module Main where
 data UPlay = A | B | C deriving (Show, Read, Eq, Enum)
 data IPlay = X | Y | Z deriving (Show, Read, Eq, Enum, Bounded)
 data  Play = R | P | S deriving (Show, Read, Eq, Enum)

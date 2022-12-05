@@ -1,6 +1,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-19.33 script
 
+module Main where
 import Data.List.Split (splitOn)
 
 -- for full theoretical treatment, see Allen's Interval Algebra

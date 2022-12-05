@@ -1,6 +1,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-19.33 script
 
+module Main where
 import Data.List.Split (chunksOf)
 import Data.Char (ord)
 import Data.Maybe (listToMaybe, mapMaybe)

@@ -4,7 +4,7 @@
 module Main where
 
 import Prelude       hiding (head, tail, drop, take)
-import Data.Vector   hiding (mapMaybe, forM_, reverse, transpose, foldl')
+import Data.Vector   hiding (mapMaybe, forM_, reverse, foldl')
 import Text.Megaparsec      (parseMaybe, many, some, Parsec)
 import Text.Megaparsec.Char (char, numberChar, upperChar, space, string)
 import Data.Maybe           (mapMaybe, fromMaybe)

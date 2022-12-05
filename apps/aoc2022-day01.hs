@@ -1,6 +1,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-20.2 script
 
+module Main where
 import Data.List ( sortBy )
 import Data.Tuple ()
 import Data.Function (on)
