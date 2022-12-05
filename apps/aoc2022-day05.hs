@@ -5,8 +5,9 @@ import Prelude hiding (head, tail, drop, take)
 import Text.Megaparsec ( parseMaybe, many, some, sepBy1, Parsec, eof, (<|>) )
 import Text.Megaparsec.Char ( char, numberChar, upperChar, space, eol, string )
 import Data.Maybe (fromMaybe, mapMaybe)
-import           Data.Vector as Vec hiding (mapMaybe)
+import           Data.Vector as Vec hiding (mapMaybe, forM_)
 import qualified Data.List as DL
+import Control.Monad (forM_)
 import Data.List.Split (splitOn)
 
 type Parser = Parsec () String
@@ -20,17 +21,13 @@ main = do
   let stripped = DL.transpose $ DL.reverse $ origStacks
       stacksL = "" : (DL.reverse <$> mapMaybe (parseMaybe ( int *> some upperChar <* space)) stripped)
       stacks = fromList (fromList <$> stacksL) -- convert to Vector
-  print stacks -- the top of the stack is now on the left of the Vector
   let moves = mapMaybe (parseMaybe ((,,)
                                      <$> (string "move " *> int <* space)
                                      <*> (string "from " *> int <* space)
                                      <*> (string "to "   *> int ))) origMoves
-      after1 = Prelude.foldl move1 stacks moves
-      after2 = Prelude.foldl move2 stacks moves
-  print after1
-  putStrLn $ Vec.toList (head <$> tail after1)
-  print after2
-  putStrLn $ Vec.toList (head <$> tail after2)
+  forM_ [move1, move2] $ \move -> do
+    let after = Prelude.foldl move stacks moves
+    putStrLn $ Vec.toList (head <$> tail after)
 
 int :: Parser Int
 int = read <$> some numberChar
