@@ -1,12 +1,14 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-20.2 script
 
+module Main where
+
 import Prelude       hiding (head, tail, drop, take)
-import Data.Vector   hiding (mapMaybe, forM_, reverse, transpose)
+import Data.Vector   hiding (mapMaybe, forM_, reverse, transpose, foldl')
 import Text.Megaparsec      (parseMaybe, many, some, Parsec)
 import Text.Megaparsec.Char (char, numberChar, upperChar, space, string)
 import Data.Maybe           (mapMaybe, fromMaybe)
-import Data.List     as DL  (reverse, transpose)
+import Data.List     as DL  (reverse, transpose, foldl')
 import Data.List.Split      (splitOn)
 import Control.Monad        (forM_)
 
@@ -24,7 +26,7 @@ main = do
                                        <*> (string "from " *> int <* space)
                                        <*> (string "to "   *> int ))) origMoves
   forM_ [moveBy (Just 1), moveBy Nothing] $ \m -> do
-    let after = Prelude.foldl m stacks moves
+    let after = foldl' m stacks moves
     putStrLn $ toList (head <$> tail after)
 
 moveBy :: Maybe Int -> Stacks -> (Int, Int, Int) -> Stacks
