@@ -62,3 +62,21 @@ executables:
     dependencies:
       - megaparsec
       - vector
+
+  day06:
+    main:                aoc2022-day06.hs
+    source-dirs:         apps
+    dependencies:
+      - megaparsec
+      - vector
+
+  2019:
+    main:                aoc2019-day16.hs
+    source-dirs:         apps
+    dependencies:
+      - ghc
+      - vector
+      - transformers
+      - containers
+      - time
+      - matrix

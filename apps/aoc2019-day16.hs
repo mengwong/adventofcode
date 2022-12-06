@@ -45,7 +45,7 @@ type Op = StateT ST IO
 
 go :: Matrix Int -> Vec.Vector Int -> IO (Vec.Vector Int)
 go b4 xs = do
-  let vecProd = multStd b4 (colVector xs)
+  let vecProd = multStd2 b4 (colVector xs)
   let toreturn = getMatrixAsVector $ fmap (\n -> abs n `mod` 10) vecProd
   return toreturn
 
@@ -60,17 +60,19 @@ main = do
   let !b4 = fromLists $ baseFor (Vec.length input) <$> [1 .. Vec.length input]
   putStrLn =<< int2str <$> nest 100 (go b4) input
   endTime1 <- getPOSIXTime
-  putStrLn $ "part 1: input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
+  putStrLn ("part 1: input length " <> show (Prelude.length inputS) <>
+            ". elapsed time: " <> show (endTime1 - startTime1))
 
-  M.forM_ ([500, 700 .. 10000]) $ \l -> do
+  M.forM_ ([500, 1000 .. 10000]) $ \l -> do
     startTime2 <- getPOSIXTime
     let input2 = Vec.fromList (Prelude.take l (cycle (Vec.toList input)))
-    let !b4 = fromLists $ baseFor (Vec.length input2) <$> [1 .. Vec.length input2]
+    let !b4 = fromLists $ baseFor l <$> [1 .. l]
     outputList <- int2str <$> nest 100 (go b4) input2
 
     let offset = (read . int2str $ Vec.take 7 input) :: Int
     -- putStrLn $ "outputList has length " <> show (Prelude.length outputList)
     putStrLn $ Prelude.take 8 $ Prelude.drop offset outputList
     endTime2 <- getPOSIXTime
-    putStrLn $ "part 2: input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
+    putStrLn ("part 2: input length " <> show (Vec.length input2) <>
+              ". elapsed time: " <> show (endTime2 - startTime2))
 
