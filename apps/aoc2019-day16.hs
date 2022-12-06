@@ -39,13 +39,11 @@ genBase y x = do
     2 ->   0
     3 -> (-1)
 
-go :: Vector Int -> IO (Vector Int)
-go xs = do
-  startTimeG <- getPOSIXTime
-  return $ Vec.fromList $ [ abs (Prelude.sum $ Mat.toList $ multStd2 b4 (colVector xs)) `mod` 10
-                          | y <- [ 1 .. Vec.length xs ]
-                          , let b4 = rowVector $ Vec.fromList (genBase y <$> [1..Vec.length xs])
-                          ]
+go :: Vector Int -> Vector Int
+go xs = Vec.fromList $ [ abs (Prelude.sum $ Mat.toList $ multStd2 b4 (colVector xs)) `mod` 10
+                       | y <- [ 1 .. Vec.length xs ]
+                       , let b4 = rowVector $ Vec.fromList (genBase y <$> [1..Vec.length xs])
+                       ]
 
 nest :: (Monad m) => Int -> (a -> m a) -> a -> m a
 nest n f x0 = M.foldM (\x () -> f x) x0 (DL.replicate n ())
@@ -55,14 +53,14 @@ main = do
   [inputS] <- lines <$> getContents
   let input = str2int inputS
   startTime1 <- getPOSIXTime
-  putStrLn =<< int2str <$> nest 100 go input
+  putStrLn $ int2str $ nTimes 100 go input
   endTime1 <- getPOSIXTime
   putStrLn $ "part 1: input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
 
   M.forM_ ([500, 1000 .. 10000]) $ \l -> do
     startTime2 <- getPOSIXTime
     let input2 = Vec.fromList (Prelude.take l (cycle (Vec.toList input)))
-    outputList <- int2str <$> nest 100 go input2
+        outputList = int2str $ nTimes 100 go input2
     putStrLn $ outputList
     endTime2 <- getPOSIXTime
     putStrLn $ "part 2: input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
