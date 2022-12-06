@@ -9,10 +9,8 @@ import Prelude       hiding (head, tail)
 import Data.Vector   as Vec
 import Data.Maybe           (mapMaybe, fromMaybe)
 import qualified Data.List as DL
-import Control.Monad as M       (forM_, foldM)
+import Control.Monad as M       (forM_, foldM, unless)
 import GHC.Utils.Misc       (nTimes)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.State
 import qualified Data.Map as Map
 import Data.Time.Clock.POSIX (getPOSIXTime)
 
@@ -62,14 +60,13 @@ main = do
     startTime2 <- getPOSIXTime
     let input2 = Vec.fromList (Prelude.take l (cycle (Vec.toList input)))
         outputList = int2str $ nTimes 100 go (Vec.toList input2)
-    putStrLn $ outputList
-    endTime2 <- getPOSIXTime
-    putStrLn $ "part 2: input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
 
 
     let offset = (read . int2str $ Vec.toList $ Vec.take 7 input) :: Int
-    putStrLn $ "outputList has length " <> show (Prelude.length outputList)
-    putStrLn $ "dropping " <> show offset
-    putStrLn $ Prelude.take 8 $ Prelude.drop offset outputList
-    putStrLn $ "done"
+        result = Prelude.take 8 $ Prelude.drop offset outputList
+    unless (Prelude.null result) $
+      putStrLn result
+
+    endTime2 <- getPOSIXTime
+    putStrLn $ "part 2: input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
 
