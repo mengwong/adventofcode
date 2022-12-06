@@ -56,7 +56,7 @@ main = do
   endTime1 <- getPOSIXTime
   putStrLn $ "part 1: input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
 
-  M.forM_ ([500, 1000 .. 10000]) $ \l -> do
+  M.forM_ ([Vec.length input * 10000]) $ \l -> do
     startTime2 <- getPOSIXTime
     let input2 = Vec.fromList (Prelude.take l (cycle (Vec.toList input)))
         outputList = int2str $ nTimes 100 go (Vec.toList input2)
