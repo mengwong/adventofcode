@@ -116,8 +116,8 @@ nest n f x0 = M.foldM (\x () -> f x) x0 (DL.replicate n ())
 
 main :: IO ()
 main = do
-  let l = 8
-      b4 = fromLists $ baseFor l <$> [1 .. l]
+  let l = 9
+      b4 = fromLists $ baseFor' l <$> [1 .. l]
   sequence [ genBase (y,x) b4
            | y <- [1..l]
            , x <- [1..l]
