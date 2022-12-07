@@ -36,14 +36,17 @@ genBase y x = do
     2 ->   0
     3 -> (-1)
 
+gen :: Vector Int8 -> Int -> Int -> Int8
+gen v y x = genBase y (x+1) * (v Vec.! x)
+
 go :: POSIXTime -> Int -> Vector Int8 -> IO (Vector Int8)
 go start0 g xs = do
   performGC
   let l = Vec.length xs
       modn n = n `mod` 1 == 0
   startTime <- getPOSIXTime
-  let !toreturn = Vec.fromList
-                  [ abs (Vec.sum (Vec.imap (\x n -> genBase y (x+1) * n) xs))
+  let !toreturn = Vec.fromListN l
+                  [ abs (Vec.sum (Vec.generate l (gen xs y)))
                     `mod` 10
                   | y <- [ 1 .. l ]
                   ]
@@ -107,18 +110,12 @@ main = do
         startTime2 <- getPOSIXTime
         let input2 = Vec.fromList $ Prelude.take l (cycle (Vec.toList input))
 
-        midTime2 <- getPOSIXTime
-        hPutStrLn stderr $ "** constructed input array of length " <> show l <> ", took " <> show (midTime2-startTime2)
-        outputList <- nTimesM 100 (go midTime2) input2
+    midTime2b <- getPOSIXTime
+    putStrLn $ "ran 100 times, took " <> show (midTime2b-startTime2)
 
         midTime2b <- getPOSIXTime
         hPutStrLn stderr $ "ran 100 times, took " <> show (midTime2b-startTime2) <> "; now dropping from the outputlist"
 
-        let offset = (read . int2str $ Vec.take 7 input) :: Int
-            result = int2str $ Vec.take 8 $ Vec.drop offset outputList
-        unless (Prelude.null result) $
-          hPutStrLn stderr "* answer: result"
-
-        endTime2 <- getPOSIXTime
-        hPutStrLn stderr $ "*** part 2: done with input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
+    endTime2 <- getPOSIXTime
+    putStrLn $ "*** part 2: done with input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2) <> "\n"
 

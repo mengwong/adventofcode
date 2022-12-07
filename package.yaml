@@ -73,6 +73,9 @@ executables:
   2019:
     main:                aoc2019-day16.hs
     source-dirs:         apps
+    ghc-options:
+    - -rtsopts
+    - '"-with-rtsopts=-N -H500M -qg +RTS -sstderr"'
     dependencies:
       - ghc
       - vector
