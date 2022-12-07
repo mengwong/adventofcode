@@ -1,34 +1,31 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-20.2 script
 
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE Strict, BangPatterns #-}
 
 -- https://adventofcode.com/2019/day/16 is said to be one of the harder ones
 module Main where
 import Prelude       hiding (head, tail)
 import Data.Vector   as Vec
+import qualified Data.Vector (Vector)
 import Data.Maybe           (mapMaybe, fromMaybe)
 import qualified Data.List as DL
-import Control.Monad as M       (forM_, foldM, unless)
+import Control.Monad as M       (forM_, foldM, unless, when)
 import GHC.Utils.Misc       (nTimes)
 import qualified Data.Map as Map
 import Data.Time.Clock.POSIX (getPOSIXTime)
+import Data.Int
+import System.Mem
 
 -- then we try https://www.oreilly.com/library/view/parallel-and-concurrent/9781449335939/ch06.html
 
-str2int :: String -> Vector Int
+str2int :: String -> Vector Int8
 str2int xs = Vec.fromList $ read . (:[]) <$> xs
 
-int2str :: [Int] -> String
-int2str = Prelude.concatMap show
+int2str :: Vector Int8 -> String
+int2str = Prelude.concatMap show . Vec.toList
 
-patt :: Vector Int -> [Int] -> Int
-patt xs ys = abs (Vec.sum (uncurry (*) <$> Vec.zip xs (Vec.fromList $ DL.tail $ cycle ys))) `mod` 10
-
-baseFor :: Int -> [Int]
-baseFor n = DL.concatMap (DL.replicate n) $ [0,1,0,-1]
-
-genBase :: Int -> Int -> Int
+genBase :: Int -> Int -> Int8
 genBase y x = do
   case x `div` y `mod` 4 of
     0 ->   0
@@ -36,37 +33,57 @@ genBase y x = do
     2 ->   0
     3 -> (-1)
 
-go :: [Int] -> [Int]
-go xs = [ abs (Prelude.sum [ genBase y x * n
-                           | (x,n) <- Prelude.zip [1..Prelude.length xs] xs
-                           ])
-          `mod` 10
-        | y <- [ 1 .. Prelude.length xs ]
-        ]
+go :: Int -> Vector Int8 -> IO (Vector Int8)
+go g xs = do
+  performGC
+  let l = Vec.length xs
+      modn n = n `mod` 10 == 0
+  startTime <- getPOSIXTime
+  let !toreturn = Vec.fromList
+                  [ abs (Vec.sum (Vec.imap (\x n -> genBase y (x+1) * n) xs))
+                    `mod` 10
+                  | y <- [ 1 .. l ]
+                  ]
+  endTime <- getPOSIXTime
+  when (modn g) $
+    putStrLn $ "go: " <> show (endTime-startTime) <> ": run " <> show g -- <> " returning " <> int2str toreturn
 
-nest :: (Monad m) => Int -> (a -> m a) -> a -> m a
-nest n f x0 = M.foldM (\x () -> f x) x0 (DL.replicate n ())
+  return $! toreturn
+
+-- | similar to nTimes, but for monads; run a given monad a certain number of times against its own output
+nest :: (Monad m) => Int -> (Int -> a -> m a) -> a -> m a
+nest n f x0 = M.foldM (\x n' -> f n' x) x0 [1..n]
 
 main :: IO ()
 main = do
   [inputS] <- lines <$> getContents
   let input = str2int inputS
+
+  putStrLn $ "* part 1"
   startTime1 <- getPOSIXTime
-  putStrLn $ int2str $ nTimes 100 go (Vec.toList input)
+  putStrLn =<< Prelude.take 8 . int2str <$> nest 100 go input
   endTime1 <- getPOSIXTime
-  putStrLn $ "part 1: input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
+  putStrLn $ "** input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
 
-  M.forM_ ([Vec.length input * 10000]) $ \l -> do
+  putStrLn $ "* part 2"
+
+  M.forM_ ((Vec.length input *) <$> [1,10,100,1000,10000]) $ \l -> do
+    putStrLn $ "** constructing input array of length " <> show l
     startTime2 <- getPOSIXTime
-    let input2 = Vec.fromList (Prelude.take l (cycle (Vec.toList input)))
-        outputList = int2str $ nTimes 100 go (Vec.toList input2)
+    let input2 = Vec.fromList $ Prelude.take l (cycle (Vec.toList input))
 
+    midTime2 <- getPOSIXTime
+    putStrLn $ "** constructed input array of length " <> show l <> ", took " <> show (midTime2-startTime2)
+    outputList <- nest 100 go input2
 
-    let offset = (read . int2str $ Vec.toList $ Vec.take 7 input) :: Int
-        result = Prelude.take 8 $ Prelude.drop offset outputList
+    midTime2b <- getPOSIXTime
+    putStrLn $ "** ran 100 times, took " <> show (midTime2b-startTime2) <> "; now dropping from the outputlist"
+
+    let offset = (read . int2str $ Vec.take 7 input) :: Int
+        result = int2str $ Vec.take 8 $ Vec.drop offset outputList
     unless (Prelude.null result) $
       putStrLn result
 
     endTime2 <- getPOSIXTime
-    putStrLn $ "part 2: input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
+    putStrLn $ "** part 2: done with input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
 
