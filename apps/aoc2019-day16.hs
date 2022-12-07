@@ -6,8 +6,8 @@
 -- https://adventofcode.com/2019/day/16 is said to be one of the harder ones
 module Main where
 import Prelude       hiding (head, tail)
-import Data.Vector   as Vec
-import qualified Data.Vector (Vector)
+import Data.Vector.Unboxed   as Vec
+import qualified Data.Vector.Unboxed (Vector)
 import Data.Maybe           (mapMaybe, fromMaybe)
 import qualified Data.List as DL
 import Control.Monad as M       (forM_, foldM, unless, when)
@@ -47,7 +47,7 @@ genOuter v l y = abs (Vec.sum (Vec.generate l (genInner v (y+1)))) `mod` 10
 
 go :: POSIXTime -> Int -> Vector Int -> IO (Vector Int)
 go start0 g xs = do
-  performGC
+  -- performGC
   let l = Vec.length xs
       modn n = n `mod` 10 == 0
   startTime <- getPOSIXTime
@@ -111,7 +111,7 @@ main = do
       hPutStrLn stderr $ "* part 2"
 
       M.forM_ ((Vec.length input *) <$> [1,10,100,1000
-                                        -- ,10000
+                                        ,10000
                                         ]) $ \l -> do
         startTime2 <- getPOSIXTime
         let input2 = Vec.fromList $ Prelude.take l (cycle (Vec.toList input))
