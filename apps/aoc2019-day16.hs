@@ -22,13 +22,14 @@ import System.IO (hPutStrLn, stderr)
 
 -- the next thing to try is https://www.oreilly.com/library/view/parallel-and-concurrent/9781449335939/ch06.html
 
-str2int :: String -> Vector Int8
+str2int :: String -> Vector Int
 str2int xs = Vec.fromList $ read . (:[]) <$> xs
 
-int2str :: Vector Int8 -> String
+int2str :: Vector Int -> String
 int2str = Prelude.concatMap show . Vec.toList
 
-genBase :: Int -> Int -> Int8
+-- | generate the base pattern for a given y,x location in the base-pattern matrix 0,1,0,-1
+genBase :: Int -> Int -> Int
 genBase y x = do
   case x `div` y `mod` 4 of
     0 ->   0
@@ -36,20 +37,21 @@ genBase y x = do
     2 ->   0
     3 -> (-1)
 
-gen :: Vector Int8 -> Int -> Int -> Int8
-gen v y x = genBase y (x+1) * (v Vec.! x)
+-- | the matrix multiplication product of the input vector * the base pattern
+genInner :: Vector Int -> Int -> Int -> Int
+genInner v y x = genBase y (x+1) * (v Vec.! x)
 
-go :: POSIXTime -> Int -> Vector Int8 -> IO (Vector Int8)
+-- | each cell in the output column is the ones digit of the sum of the matrix multiplication of the input row
+genOuter :: Vector Int -> Int -> Int -> Int
+genOuter v l y = abs (Vec.sum (Vec.generate l (genInner v (y+1)))) `mod` 10
+
+go :: POSIXTime -> Int -> Vector Int -> IO (Vector Int)
 go start0 g xs = do
   performGC
   let l = Vec.length xs
-      modn n = n `mod` 1 == 0
+      modn n = n `mod` 10 == 0
   startTime <- getPOSIXTime
-  let !toreturn = Vec.fromListN l
-                  [ abs (Vec.sum (Vec.generate l (gen xs y)))
-                    `mod` 10
-                  | y <- [ 1 .. l ]
-                  ]
+  let !toreturn = Vec.generate l (genOuter xs l)
   endTime <- getPOSIXTime
   when (modn g) $ do
     hPutStrLn stderr $ "go: " <> show (endTime-startTime) <> ": run " <> show g <> " (" <> show (endTime-start0) <> " since start)"
@@ -67,19 +69,18 @@ nest n f x0 = M.foldM (\x n' -> f n' x) x0 [1..n]
 
 but somewhere in nTimesM (go...) is a memory leak causing slowdown
 
-** constructed input array of length 320000, took 0s
-go: 0.02715s: run 100 (0.032702s since start)
-go: 0.013188s: run 90 (0.506888s since start)
-go: 0.012969s: run 80 (1.560669s since start)
-go: 0.012629s: run 70 (3.191519s since start)
-go: 0.012641s: run 60 (5.409715s since start)
-go: 0.013199s: run 50 (8.225859s since start)
-go: 0.012661s: run 40 (11.638799s since start)
-go: 0.012313s: run 30 (15.605208s since start)
-go: 0.014037s: run 20 (20.318473s since start)
-go: 0.012758s: run 10 (25.562153s since start)
-** ran 100 times, took 30.668926s; now dropping from the outputlist
-** part 2: done with input length 320000. elapsed time: 30.668969s
+** constructed input array of length 650000, took 0s
+go: 0.054046s: run 100 (0.064163s since start)
+go: 0.021463s: run 90 (0.924238s since start)
+go: 0.021465s: run 80 (2.826029s since start)
+go: 0.02117s: run 70 (5.761707s since start)
+go: 0.021514s: run 60 (9.760877s since start)
+go: 0.021057s: run 50 (14.902953s since start)
+go: 0.021391s: run 40 (21.036775s since start)
+go: 0.021891s: run 30 (28.292182s since start)
+go: 0.021434s: run 20 (36.462654s since start)
+go: 0.022907s: run 10 (45.762933s since start)
+ran 100 times, took 55.550888s; now dropping from the outputlist
 
 -}
 
@@ -96,26 +97,33 @@ main = do
 
   hPutStrLn stderr $ "* part 1"
   startTime1 <- getPOSIXTime
-  putStrLn =<< int2str <$> nTimesM 10 (go startTime1) input
+  putStrLn =<< int2str <$> nTimesM 100 (go startTime1) input
   endTime1 <- getPOSIXTime
   hPutStrLn stderr $ "** input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
 
+  when True $ part2 input
+
   where
-    part2_ :: Vector Int8 -> IO ()
-    part2_ input = do  
+    part2 :: Vector Int -> IO ()
+    part2 input = do  
+      let offset = (read . int2str $ Vec.take 7 input) :: Int
 
       hPutStrLn stderr $ "* part 2"
 
-      M.forM_ ((Vec.length input *) <$> [1,10,100,1000,10000]) $ \l -> do
+      M.forM_ ((Vec.length input *) <$> [1,10,100,1000
+                                        -- ,10000
+                                        ]) $ \l -> do
         startTime2 <- getPOSIXTime
         let input2 = Vec.fromList $ Prelude.take l (cycle (Vec.toList input))
-
-    midTime2b <- getPOSIXTime
-    putStrLn $ "ran 100 times, took " <> show (midTime2b-startTime2)
+        hPutStrLn stderr $ "** input length " <> show l
+        outputList <- nTimesM 100 (go startTime2) input2
 
         midTime2b <- getPOSIXTime
-        hPutStrLn stderr $ "ran 100 times, took " <> show (midTime2b-startTime2) <> "; now dropping from the outputlist"
+        hPutStrLn stderr $ "ran 100 times, took " <> show (midTime2b-startTime2)
+        let answer = Vec.take 8 $ Vec.drop offset outputList
+        when (not $ Vec.null answer) $ hPutStrLn stderr $ "* answer: " <> int2str answer
 
-    endTime2 <- getPOSIXTime
-    putStrLn $ "*** part 2: done with input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2) <> "\n"
+        endTime2 <- getPOSIXTime
+        putStrLn $ "*** part 2: done with input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2) <> "\n"
+
 
