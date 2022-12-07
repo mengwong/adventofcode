@@ -19,6 +19,7 @@ import Data.Int
 import System.Mem
 import Data.Fixed
 import System.IO (hPutStrLn, stderr)
+import Data.Matrix
 
 -- the next thing to try is https://www.oreilly.com/library/view/parallel-and-concurrent/9781449335939/ch06.html
 
@@ -94,12 +95,17 @@ main :: IO ()
 main = do
   [inputS] <- lines <$> getContents
   let input = str2int inputS
+      l = Vec.length input
 
+  hPutStrLn stderr $ "* the base matrix"
+  let basematrix = matrix 10 10 (\(y,x) -> genBase y (x - 1))
+  hPutStrLn stderr $ show basematrix
+  
   hPutStrLn stderr $ "* part 1"
   startTime1 <- getPOSIXTime
   putStrLn =<< int2str <$> nTimesM 100 (go startTime1) input
   endTime1 <- getPOSIXTime
-  hPutStrLn stderr $ "** input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
+  hPutStrLn stderr $ "** input length " <> show l <> ". elapsed time: " <> show (endTime1 - startTime1)
 
   when True $ part2 input
 
