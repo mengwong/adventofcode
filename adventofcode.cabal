@@ -27,7 +27,7 @@ executable 2019
       Paths_adventofcode
   hs-source-dirs:
       apps
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -rtsopts "-with-rtsopts=-N -H500M -qg +RTS -sstderr"
   build-depends:
       base >=4.7 && <5
     , bitvec
