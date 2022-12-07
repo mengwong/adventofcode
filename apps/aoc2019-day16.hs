@@ -18,6 +18,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime, POSIXTime)
 import Data.Int
 import System.Mem
 import Data.Fixed
+import System.IO (hPutStrLn, stderr)
 
 -- the next thing to try is https://www.oreilly.com/library/view/parallel-and-concurrent/9781449335939/ch06.html
 
@@ -39,7 +40,7 @@ go :: POSIXTime -> Int -> Vector Int8 -> IO (Vector Int8)
 go start0 g xs = do
   performGC
   let l = Vec.length xs
-      modn n = n `mod` 10 == 0
+      modn n = n `mod` 1 == 0
   startTime <- getPOSIXTime
   let !toreturn = Vec.fromList
                   [ abs (Vec.sum (Vec.imap (\x n -> genBase y (x+1) * n) xs))
@@ -48,7 +49,7 @@ go start0 g xs = do
                   ]
   endTime <- getPOSIXTime
   when (modn g) $ do
-    putStrLn $ "go: " <> show (endTime-startTime) <> ": run " <> show g <> " (" <> show (endTime-start0) <> " since start)"
+    hPutStrLn stderr $ "go: " <> show (endTime-startTime) <> ": run " <> show g <> " (" <> show (endTime-start0) <> " since start)"
     -- <> " returning " <> int2str toreturn
 
   return $! toreturn
@@ -90,30 +91,34 @@ main = do
   [inputS] <- lines <$> getContents
   let input = str2int inputS
 
-  putStrLn $ "* part 1"
+  hPutStrLn stderr $ "* part 1"
   startTime1 <- getPOSIXTime
-  putStrLn =<< Prelude.take 8 . int2str <$> nTimesM 100 (go startTime1) input
+  putStrLn =<< int2str <$> nTimesM 10 (go startTime1) input
   endTime1 <- getPOSIXTime
-  putStrLn $ "** input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
+  hPutStrLn stderr $ "** input length " <> show (Prelude.length inputS) <> ". elapsed time: " <> show (endTime1 - startTime1)
 
-  putStrLn $ "* part 2"
+  where
+    part2_ :: Vector Int8 -> IO ()
+    part2_ input = do  
 
-  M.forM_ ((Vec.length input *) <$> [1,10,100,1000,10000]) $ \l -> do
-    startTime2 <- getPOSIXTime
-    let input2 = Vec.fromList $ Prelude.take l (cycle (Vec.toList input))
+      hPutStrLn stderr $ "* part 2"
 
-    midTime2 <- getPOSIXTime
-    putStrLn $ "** constructed input array of length " <> show l <> ", took " <> show (midTime2-startTime2)
-    outputList <- nTimesM 100 (go midTime2) input2
+      M.forM_ ((Vec.length input *) <$> [1,10,100,1000,10000]) $ \l -> do
+        startTime2 <- getPOSIXTime
+        let input2 = Vec.fromList $ Prelude.take l (cycle (Vec.toList input))
 
-    midTime2b <- getPOSIXTime
-    putStrLn $ "ran 100 times, took " <> show (midTime2b-startTime2) <> "; now dropping from the outputlist"
+        midTime2 <- getPOSIXTime
+        hPutStrLn stderr $ "** constructed input array of length " <> show l <> ", took " <> show (midTime2-startTime2)
+        outputList <- nTimesM 100 (go midTime2) input2
 
-    let offset = (read . int2str $ Vec.take 7 input) :: Int
-        result = int2str $ Vec.take 8 $ Vec.drop offset outputList
-    unless (Prelude.null result) $
-      putStrLn "* answer: result"
+        midTime2b <- getPOSIXTime
+        hPutStrLn stderr $ "ran 100 times, took " <> show (midTime2b-startTime2) <> "; now dropping from the outputlist"
 
-    endTime2 <- getPOSIXTime
-    putStrLn $ "*** part 2: done with input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
+        let offset = (read . int2str $ Vec.take 7 input) :: Int
+            result = int2str $ Vec.take 8 $ Vec.drop offset outputList
+        unless (Prelude.null result) $
+          hPutStrLn stderr "* answer: result"
+
+        endTime2 <- getPOSIXTime
+        hPutStrLn stderr $ "*** part 2: done with input length " <> show (Vec.length input2) <> ". elapsed time: " <> show (endTime2 - startTime2)
 
