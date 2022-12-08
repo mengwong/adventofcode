@@ -39,26 +39,37 @@ genBase y x = do
     3 -> (-1)
 
 -- | the matrix multiplication product of the input vector * the base pattern
-genInner :: Vector Int -> Int -> Int -> Int
-genInner v y x = genBase y (x+1) * (v Vec.! x)
+genInner :: Vector Int -> Vector Int -> Int -> Int
+genInner ib v x = (ib Vec.! x) * (v Vec.! x)
 
--- | each cell in the output column is the ones digit of the sum of the matrix multiplication of the input row
+-- | each cell in the output column is the ones digit of the sum of the matrix multiplication of the input row.
+-- we generate the basepattern for this row afresh because we can't afford to keep the entire basepattern in ram:
+-- it would be 6.5M columns * 6.5M rows. For smaller input sizes, it would make sense to cache entire base pattern
+-- as a 2d matrix, and look up only the relevant row to pass in to the inner loop.
+-- but we don't have that much ram. We don't even have that much disk.
+
 genOuter :: Vector Int -> Int -> Int -> Int
-genOuter v l y = abs (Vec.sum (Vec.generate l (genInner v (y+1)))) `mod` 10
+genOuter v l y = let innerBase = Vec.generate l (\x -> genBase y x+1)
+                 in abs (Vec.sum (Vec.generate l (genInner innerBase v))) `mod` 10
 
 go :: POSIXTime -> Int -> Vector Int -> IO (Vector Int)
-go start0 g xs = do
+go start0 g v = do
   -- performGC
-  let l = Vec.length xs
+  let l = Vec.length v
       modn n = n `mod` 10 == 0
+      
   startTime <- getPOSIXTime
-  let !toreturn = Vec.generate l (genOuter xs l)
+  let !toreturn = Vec.generate l (\y -> genOuter v l (y+1))
   endTime <- getPOSIXTime
   when (modn g) $ do
     hPutStrLn stderr $ "go: " <> show (endTime-startTime) <> ": run " <> show g <> " (" <> show (endTime-start0) <> " since start)"
     -- <> " returning " <> int2str toreturn
 
-  return $! toreturn
+  return toreturn
+
+-- | take advantage of the properties of the input to flatten the runtime
+goFaster :: ()
+goFaster = ()
 
 -- | similar to nTimes, but for monads; run a given monad a certain number of times against its own output.
 -- we previously tried `nest` but something about the fold ate too much ram.
@@ -85,9 +96,10 @@ ran 100 times, took 55.550888s; now dropping from the outputlist
 
 -}
 
+
 nTimesM :: (Monad m) => Int -> (Int -> a -> m a) -> a -> m a
 nTimesM n f x
-  | n == 0 = return $! x
+  | n == 0 = return x
   | otherwise = nTimesM (n-1) f =<< f n x
 
 
