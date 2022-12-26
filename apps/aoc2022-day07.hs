@@ -45,8 +45,32 @@ type CWD = [String]
 
 type Parser = Parsec Void String
 
--- | we begin by parsing the input into a list of Traces: cd or ls, followed by a list of files and subdirectories.
--- 
+-- | parsers for the input strings.
+-- we begin by parsing the input into a list of Traces: cd or ls, followed by a list of files and subdirectories.
+  
+traceP :: Parser Trace
+traceP = (,) <$> cmdP <*> many (fileP <* eol)
+
+cmdP :: Parser Cmd
+cmdP = do
+  string "$ "
+  tryChoice [ Cd <$> (string "cd " *> pathP)
+            , Ls <$ string "ls"
+            ] <* eol
+  where
+    pathP :: Parser Path
+    pathP = choice [ Root <$  string "/"
+                   , Up   <$  string ".."
+                   , Path <$> nonWhiteSpace
+                   ]
+
+fileP :: Parser File
+fileP = choice [ DirEnt <$> (string "dir" *> hspace *> some alphaNumChar)
+               , Plain  <$> pInt <* hspace <*> nonWhiteSpace
+               ]
+
+-- | construct a couple of progressively correct representations of the filesystem.
+-- then solve part a and b
 
 main :: IO ()
 main = do
@@ -60,6 +84,7 @@ main = do
           
       -- putStrLn $ unlines [ intercalate "/" (reverse k) | k <- Map.keys shellstate ]
       -- putStrLn $ Tree.drawTree $ (\(s,i) -> show i <> replicate (10 - length (show i)) ' ' <> s) <$> asDirTree
+
       -- now we can run some queries
       -- Part 1:
       -- Find all of the directories with a total size of at most 100000.
@@ -83,12 +108,6 @@ main = do
                           , i >= deleteSize
                           ]
 
-  where
-    -- viewpatterns might be appropriate here
-    hasChildren (Tree.Node _ []) = False
-    hasChildren _                = True
-      
--- once we have a bunch of traces, we fold them to construct a filesystem informed by the changing shellstate at any point in the trace.
 -- | once we have the parsed command list, we construct the filesystem accordingly.
 -- we use a state monad to keep track of CWD.
 -- at any point in the trace we have a CWD, which informs how we mutate the filesystem map.
@@ -97,9 +116,6 @@ buildFS :: [Trace] -> State CWD Filesystem
 buildFS ts = foldM go Map.empty ts
   where
     go :: Filesystem -> Trace -> State CWD Filesystem
-    go fs (Ls, files)      = do
-      cwd <- get
-      return $ Map.union fs (Map.singleton cwd files)
     go fs (Cd Root,     _) = put [] >> return fs
     go fs (Cd Up,       _) = do cwd <- get; when (length cwd > 0) $ put (drop 1 cwd); return fs
     go fs (Cd (Path p), _) = do
@@ -107,6 +123,9 @@ buildFS ts = foldM go Map.empty ts
       let ps = reverse (splitOn "/" p)
       put (ps++cwd)
       return fs
+    go fs (Ls, files)      = do
+      cwd <- get
+      return $ Map.union fs (Map.singleton cwd files)
 
 -- | transform the filesystem map to a proper tree.
 -- We do this in a single pass over the map sorted by key (hopefully O(n log n)),
@@ -123,31 +142,7 @@ asTree fs cwd =
     go (DirEnt p)  = asTree fs (p:cwd)
     go (Plain n s) = Tree.Node (s,n) []
 
--- | parsers for the input strings
-  
-traceP :: Parser Trace
-traceP = (,) <$> cmdP <*> many (fileP <* eol)
-
-cmdP :: Parser Cmd
-cmdP = do
-  string "$ "
-  tryChoice [ Cd <$> (string "cd " *> pathP)
-            , Ls <$ string "ls"
-            ] <* eol
-
-pathP :: Parser Path
-pathP = choice [ Root <$  string "/"
-               , Up   <$  string ".."
-               , Path <$> nonWhiteSpace
-               ]
-
-fileP :: Parser File
-fileP = do
-  choice [ DirEnt <$> (string "dir" *> hspace *> some alphaNumChar)
-         , Plain  <$> pInt <* hspace <*> nonWhiteSpace
-         ]
-
--- | utility functions
+-- | utility functions for parsing
 
 nonWhiteSpace :: Parser String
 nonWhiteSpace = some (alphaNumChar <|> punctuationChar)
