@@ -4,8 +4,7 @@
 module Lib07 where
 import qualified Data.Map as Map
 import qualified Data.Vector  as DV
-import Text.Megaparsec        (runParser, many, some, Parsec, choice
-                              , try, errorBundlePretty, anySingleBut, (<?>), (<|>), satisfy, anySingle)
+import Text.Megaparsec        (runParser, many, some, Parsec, choice , try, errorBundlePretty, anySingleBut, (<?>), (<|>), satisfy, anySingle)
 import Text.Megaparsec.Char   (char, string, alphaNumChar, punctuationChar, hspace, space, digitChar, eol, spaceChar, newline)
 import Text.Parsec.Combinator (manyTill, eof)
 import Data.Maybe             (mapMaybe, fromMaybe, listToMaybe)
@@ -48,14 +47,9 @@ realMain = do
                           | ('/':s,i) <- Tree.flatten asDirTree
                           , i >= deleteSize ]
 
--- | intermediate representations
 type CWD        = [String]                           -- ^ path, reversed, so root is to the right
-type Filesystem = Map.Map                            -- ^ first pass, we have a flap map of path to files
-                  CWD                                -- ^ path
-                  [File]                             -- ^ list of files
+type Filesystem = Map.Map CWD [File]                 -- ^ first pass, we have a flap map of path to files
 type FSTree     = Tree.Tree (String,Int)             -- ^ second pass, we have a tree of file and size
-
--- | we parse to these types
 data Cmd  = Ls                                       -- ^ "ls"
           | Cd Path            deriving (Eq, Show)   -- ^ "cd Path"
 data Path = Root                                     -- ^ "/"
@@ -118,9 +112,8 @@ buildFS ts = foldM go Map.empty ts
 asTree :: Filesystem -> CWD -> FSTree
 asTree fs cwd =
   let children = go <$> fromMaybe [] (Map.lookup cwd fs)
-  in
-    Tree.Node ( intercalate "/" ("" : reverse cwd)
-              , sum $ snd . Tree.rootLabel <$> children) children
+  in Tree.Node ( intercalate "/" ("" : reverse cwd)
+               , sum $ snd . Tree.rootLabel <$> children) children
   where
     go (DirEnt p)  = asTree fs (p:cwd)
     go (Plain n s) = Tree.Node (s,n) []
