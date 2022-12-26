@@ -46,7 +46,8 @@ genInner ib v x = (ib Vec.! x) * (v Vec.! x)
 -- we generate the basepattern for this row afresh because we can't afford to keep the entire basepattern in ram:
 -- it would be 6.5M columns * 6.5M rows. For smaller input sizes, it would make sense to cache entire base pattern
 -- as a 2d matrix, and look up only the relevant row to pass in to the inner loop.
--- but we don't have that much ram. We don't even have that much disk.
+-- but we don't have that much ram. We don't even have that much disk. So we have to genBase each time.
+-- unfortunately, the genBase runs over l inputs, and genOuter also runs over l inputs, so this is why we are quadratic.
 
 genOuter :: Vector Int -> Int -> Int -> Int
 genOuter v l y = let innerBase = Vec.generate l (\x -> genBase y x+1)
