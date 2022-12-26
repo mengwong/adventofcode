@@ -21,10 +21,11 @@ source-repository head
   type: git
   location: https://github.com/mengwong/adventofcode
 
-executable day07
-  main-is: aoc2022-day07.hs
+library
+  exposed-modules:
+      Lib07
   hs-source-dirs:
-      apps
+      src
   build-depends:
       base >=4.7 && <5
     , vector
@@ -34,6 +35,15 @@ executable day07
     , megaparsec
     , parsec
     , split
+  default-language: Haskell2010
+
+executable day07
+  main-is: aoc2022-day07.hs
+  hs-source-dirs:
+      apps
+  build-depends:
+      base >=4.7 && <5
+    , adventofcode
   default-language: Haskell2010
 
 executable 2019
