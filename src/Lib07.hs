@@ -21,35 +21,29 @@ import qualified Data.Tree as Tree
 -- Second, we convert the Map to a Tree.
 -- Then we solve part a and b by querying against the Tree.
 
-realMain :: IO ()
-realMain = do
+main :: IO ()
+main = do
   input <- getContents
   case runParser (some traceP) "day07" input of
     Left x  -> fail $ errorBundlePretty x
     Right x -> do
       let fsmap = evalState (buildFS x) [] :: Filesystem
           asDirTree = asTree fsmap []      :: FSTree
-      -- putStrLn $ unlines [ intercalate "/" (reverse k) | k <- Map.keys fsmap ]
-      -- putStrLn $ Tree.drawTree $ (\(s,i) -> show i <> replicate (10 - length (show i)) ' ' <> s) <$> asDirTree
-
       -- part 1: Find all of the directories with a total size of at most 100000.
       -- What is the sum of the total sizes of those directories?
       print $ sum $ [ i
-                    | ('/':s,i) <- Tree.flatten asDirTree
+                    | (i,'/':s) <- Tree.flatten asDirTree
                     , i < 100000 ]
       -- part 2
-      let totalDisk     = 70000000
-          neededDisk    = 30000000
-          currentlyUsed = snd $ Tree.rootLabel asDirTree
+      let totalDisk     = 70000000; neededDisk = 30000000
+          currentlyUsed = fst $ Tree.rootLabel asDirTree
           deleteSize    = neededDisk - (totalDisk - currentlyUsed)
       putStrLn $ "looking for the smallest directory larger than " ++ show deleteSize
-      print $ head $ sort [ (i,'/':s)
-                          | ('/':s,i) <- Tree.flatten asDirTree
-                          , i >= deleteSize ]
+      print $ head $ sort $ filter (>= deleteSize) (fst <$> Tree.flatten asDirTree)
 
 type CWD        = [String]                           -- ^ path, reversed, so root is to the right
 type Filesystem = Map.Map CWD [File]                 -- ^ first pass, we have a flap map of path to files
-type FSTree     = Tree.Tree (String,Int)             -- ^ second pass, we have a tree of file and size
+type FSTree     = Tree.Tree (Int,String)             -- ^ second pass, we have a tree of size and file
 data Cmd  = Ls                                       -- ^ "ls"
           | Cd Path            deriving (Eq, Show)   -- ^ "cd Path"
 data Path = Root                                     -- ^ "/"
@@ -66,25 +60,17 @@ type Parser     = Parsec Void String                 -- ^ your basic megaparsec
 -- we begin by parsing the input into a list of Traces: cd or ls, followed by a list of files and subdirectories.
   
 traceP :: Parser Trace
-traceP = (,) <$> cmdP <*> many (fileP <* eol)
-
-cmdP :: Parser Cmd
-cmdP = do
-  string "$ "
-  tryChoice [ Cd <$> (string "cd " *> pathP)
-            , Ls <$ string "ls"
-            ] <* eol
-  where
-    pathP :: Parser Path
-    pathP = choice [ Root <$  string "/"
-                   , Up   <$  string ".."
-                   , Path <$> nonWhiteSpace
-                   ]
-
-fileP :: Parser File
-fileP = choice [ DirEnt <$> (string "dir" *> hspace *> some alphaNumChar)
-               , Plain  <$> pInt <* hspace <*> nonWhiteSpace
-               ]
+traceP = (,)
+         <$> (string "$ " *>
+              choice [ Cd <$> (string "cd " *>
+                               choice [ Root <$  string "/"
+                                      , Up   <$  string ".."
+                                      , Path <$> nonWhiteSpace
+                                      ])
+                     , Ls <$ string "ls" ] <* eol)
+         <*> many (choice [ DirEnt <$> (string "dir" *> hspace *> some alphaNumChar)
+                          , Plain  <$> pInt <* hspace <*> nonWhiteSpace
+                          ] <* eol)
 
 -- | Once we have the parsed command log, we construct the filesystem accordingly.
 -- We use a state monad to keep track of CWD.
@@ -101,9 +87,7 @@ buildFS ts = foldM go Map.empty ts
       let ps = reverse (splitOn "/" p)
       put (ps++cwd)
       return fs
-    go fs (Ls, files)      = do
-      cwd <- get
-      return $ Map.union fs (Map.singleton cwd files)
+    go fs (Ls, files)      = do cwd <- get; return $ Map.union fs (Map.singleton cwd files)
 
 -- | Finally we transform the filesystem map to a proper tree.
 -- We do this in a single pass over the map sorted by key (hopefully O(n log n)),
@@ -112,18 +96,15 @@ buildFS ts = foldM go Map.empty ts
 asTree :: Filesystem -> CWD -> FSTree
 asTree fs cwd =
   let children = go <$> fromMaybe [] (Map.lookup cwd fs)
-  in Tree.Node ( intercalate "/" ("" : reverse cwd)
-               , sum $ snd . Tree.rootLabel <$> children) children
+  in Tree.Node ( sum $ fst . Tree.rootLabel <$> children
+               , intercalate "/" ("" : reverse cwd) ) children
   where
     go (DirEnt p)  = asTree fs (p:cwd)
-    go (Plain n s) = Tree.Node (s,n) []
+    go (Plain n s) = Tree.Node (n,s) []
 
 -- | utility functions for parsing
 nonWhiteSpace :: Parser String
 nonWhiteSpace = some (alphaNumChar <|> punctuationChar)
 
-tryChoice :: [Parser a] -> Parser a
-tryChoice = choice . fmap try
-  
 pInt :: Parser Int
 pInt = read <$> some digitChar

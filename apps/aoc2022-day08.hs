@@ -2,5 +2,5 @@
 -- stack --resolver lts-20.2 script
 
 module Main where
-import Lib07
-main = Lib07.main
+import Lib08
+main = Lib08.main
