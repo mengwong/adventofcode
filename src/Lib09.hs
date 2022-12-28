@@ -18,11 +18,12 @@ main :: IO ()
 main = do
   input <- lines <$> getContents
   let moves   = concat [ replicate (read nsteps :: Int) (read dir :: Dir) | i <- input , let [dir, nsteps] = words i ]
-      ropeLen = 10
-      trail   = DL.scanl move (replicate ropeLen (P 0 0)) moves
+      trail2  = DL.scanl move (replicate  2 (P 0 0)) moves
+      trail10 = DL.scanl move (replicate 10 (P 0 0)) moves
   -- print moves
-  -- putStrLn $ unlines $ (show <$> trail)
-  print $ length $ DL.nub (last <$> trail)
+  -- putStrLn $ unlines $ (show <$> trail2)
+  print $ length $ DL.nub (last <$> trail2)
+  print $ length $ DL.nub (last <$> trail10)
   
 type Rope = [Point]
 
