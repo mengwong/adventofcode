@@ -18,18 +18,18 @@ main :: IO ()
 main = do
   input <- lines <$> getContents
   let moves   = concat [ replicate (read nsteps :: Int) (read dir :: Dir) | i <- input , let [dir, nsteps] = words i ]
-      ropelen = 2
-      trail   = DL.scanl move (replicate ropelen (P 0 0)) moves
+      ropeLen = 10
+      trail   = DL.scanl move (replicate ropeLen (P 0 0)) moves
   -- print moves
-  putStrLn $ unlines $ (show <$> trail)
+  -- putStrLn $ unlines $ (show <$> trail)
   print $ length $ DL.nub (last <$> trail)
   
 type Rope = [Point]
 
 move :: Rope -> Dir -> Rope
 move r d =
-  let h = lead (head r) d
-  in h : snd (DL.mapAccumL (\h t -> (step (t,h), step (t,h))) h (tail r))
+  let n = lead (head r) d
+  in n : snd (DL.mapAccumL (\h t -> (step (t,h), step (t,h))) n (tail r))
 
 step :: (Point,Point) -> Point
 step (t,h) = t <+> follow t h
@@ -48,17 +48,22 @@ lead p R = p <+> P ( 1) ( 0)
 
 follow :: Point -> Point -> Point
 follow t h = case t <-> h of
-               P ( 2) ( 0) -> P ( 1) ( 0)
-               P (-2) ( 0) -> P (-1) ( 0)
-               P ( 0) ( 2) -> P ( 0) ( 1)
-               P ( 0) (-2) -> P ( 0) (-1)
-               P ( 2) ( 1) -> P ( 1) ( 1)
-               P (-2) ( 1) -> P (-1) ( 1)
-               P ( 1) ( 2) -> P ( 1) ( 1)
-               P ( 1) (-2) -> P ( 1) (-1)
-               P ( 2) (-1) -> P ( 1) (-1)
+               -- the distance could be one of 5x5 - 3x3 = 16 options
+               P (-2) (-2) -> P (-1) (-1)
                P (-2) (-1) -> P (-1) (-1)
+               P (-2) ( 0) -> P (-1) ( 0)
+               P (-2) ( 1) -> P (-1) ( 1)
+               P (-2) ( 2) -> P (-1) ( 1)
                P (-1) ( 2) -> P (-1) ( 1)
+               P ( 0) ( 2) -> P ( 0) ( 1)
+               P ( 1) ( 2) -> P ( 1) ( 1)
+               P ( 2) ( 2) -> P ( 1) ( 1)
+               P ( 2) ( 1) -> P ( 1) ( 1)
+               P ( 2) ( 0) -> P ( 1) ( 0)
+               P ( 2) (-1) -> P ( 1) (-1)
+               P ( 2) (-2) -> P ( 1) (-1)
+               P ( 1) (-2) -> P ( 1) (-1)
+               P ( 0) (-2) -> P ( 0) (-1)
                P (-1) (-2) -> P (-1) (-1)
                _           -> P   0    0
 
