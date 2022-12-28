@@ -17,18 +17,22 @@ data Point = P { x :: Int, y :: Int }
 main :: IO ()
 main = do
   input <- lines <$> getContents
-  let moves = concat [ replicate (read nsteps :: Int) (read dir :: Dir) | i <- input , let [dir, nsteps] = words i ]
-      trail = DL.scanl move [P 0 0, P 0 0] moves
+  let moves   = concat [ replicate (read nsteps :: Int) (read dir :: Dir) | i <- input , let [dir, nsteps] = words i ]
+      ropelen = 2
+      trail   = DL.scanl move (replicate ropelen (P 0 0)) moves
   -- print moves
-  -- putStrLn $ unlines $ (show <$> trail)
+  putStrLn $ unlines $ (show <$> trail)
   print $ length $ DL.nub (last <$> trail)
   
 type Rope = [Point]
 
 move :: Rope -> Dir -> Rope
-move r d = let h' = lead   (head r) d
-               t' = (last r) <+> follow (last r) h'
-           in [h',t']
+move r d =
+  let h = lead (head r) d
+  in h : snd (DL.mapAccumL (\h t -> (step (t,h), step (t,h))) h (tail r))
+
+step :: (Point,Point) -> Point
+step (t,h) = t <+> follow t h
 
 lead :: Point -> Dir -> Point
 lead p U = p <+> P ( 0) (-1)
