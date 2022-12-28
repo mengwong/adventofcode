@@ -18,17 +18,17 @@ main :: IO ()
 main = do
   input <- lines <$> getContents
   let moves = concat [ replicate (read nsteps :: Int) (read dir :: Dir) | i <- input , let [dir, nsteps] = words i ]
-      trail = DL.scanl move (P 0 0, P 0 0) moves
+      trail = DL.scanl move [P 0 0, P 0 0] moves
   -- print moves
   -- putStrLn $ unlines $ (show <$> trail)
-  print $ length $ DL.nub (fst <$> trail)
+  print $ length $ DL.nub (last <$> trail)
   
-type TailHead = (Point, Point)
+type Rope = [Point]
 
-move :: TailHead -> Dir -> TailHead
-move (t,h) d = let h' = lead   h d
-                   t' = t <+> follow t h'
-               in (t',h')
+move :: Rope -> Dir -> Rope
+move r d = let h' = lead   (head r) d
+               t' = (last r) <+> follow (last r) h'
+           in [h',t']
 
 lead :: Point -> Dir -> Point
 lead p U = p <+> P ( 0) (-1)
