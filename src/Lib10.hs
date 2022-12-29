@@ -1,6 +1,4 @@
 module Lib10 where
-import Control.Monad
-import Control.Monad.Trans.State
 
 main :: IO ()
 main = do
