@@ -30,6 +30,7 @@ outcome u i
   | u `beats` i = Lose
   | otherwise   = Draw
 
+quantify :: Num a => Outcome -> a
 quantify Win  = 6
 quantify Lose = 0
 quantify Draw = 3

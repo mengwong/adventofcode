@@ -26,6 +26,7 @@ library
       Lib07
       Lib08
       Lib09
+      Lib10
   hs-source-dirs:
       src
   build-depends:
@@ -38,6 +39,15 @@ library
     , parsec
     , split
     , matrix
+  default-language: Haskell2010
+
+executable day10
+  main-is: aoc2022-day10.hs
+  hs-source-dirs:
+      apps
+  build-depends:
+      base >=4.7 && <5
+    , adventofcode
   default-language: Haskell2010
 
 executable day09
