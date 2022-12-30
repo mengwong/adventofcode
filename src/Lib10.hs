@@ -2,7 +2,7 @@ module Lib10 where
 
 main :: IO ()
 main = do
-  input <- fmap words <$> (lines <$> getContents)
+  input <- (fmap words . lines) <$> getContents
   let log = tick 1 1 input; width = 40
   print $ sum [ c * x | (c,x) <- log, c `elem` [20,60..220] ]
   putStrLn $ concat [ pixel (c,x) xpos ++ if xpos == width - 1 then "\n" else ""
