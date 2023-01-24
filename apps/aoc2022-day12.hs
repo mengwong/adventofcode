@@ -29,8 +29,9 @@ main = do
                          outE = [ (,go E input (row,col)) <$> d | let d = (\x -> x - mychar) . sex <$> getn E input (row,col) ]
                          outW = [ (,go W input (row,col)) <$> d | let d = (\x -> x - mychar) . sex <$> getn W input (row,col) ]
                    ]
+      sNode = fromJust $ elemIndex 'S' (DM.toList input)
       eNode = fromJust $ elemIndex 'E' (DM.toList input)
-      path = esp 0 eNode gr
+      path = esp sNode eNode gr
   putStrLn $ "end node is at " ++ show eNode
   putStrLn $ "shortest path = " ++ show path
   putStrLn (asArrows input gr path)
