@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE TupleSections #-}
 
 module Main where
@@ -7,12 +6,10 @@ module Main where
 import qualified Data.Map as Map
 import qualified Data.Vector  as DV
 import qualified Data.Matrix  as DM
-import Data.Maybe
-import Data.List
-import Data.Either
-import Data.Char
-import Data.Graph.Inductive
-import Debug.Trace
+import Data.Maybe ( catMaybes, fromJust )
+import Data.List ( elemIndex, sortOn )
+import Data.Char ( ord )
+import Data.Graph.Inductive ( buildGr, mkGraph, esp, Gr, level, emap, labNodes, labEdges )
 import Data.List.Split (chunksOf)
 
 main :: IO ()
@@ -31,13 +28,21 @@ main = do
                    ]
       sNode = fromJust $ elemIndex 'S' (DM.toList input)
       eNode = fromJust $ elemIndex 'E' (DM.toList input)
-      path = esp sNode eNode gr
-  putStrLn $ "end node is at " ++ show eNode
-  putStrLn $ "shortest path = " ++ show path
+      solve s = esp s eNode gr
+      path = solve sNode
   putStrLn (asArrows input gr path)
-  putStrLn $ "shortest path length = " ++ show (length path - 1)
-  -- prettyPrint gr
+  putStrLn $ "part 1: shortest path length = " ++ show (length path - 1)
 
+--  let possibleStartNodes = [ n | (n,c) <- zip [0..] (DM.toList input), c == 'a' ]
+--      solutions = sortOn length $ filter (not . null) $ solve <$> possibleStartNodes
+--  putStrLn $ "part 2 (brute): ideal starting point has " ++ show (length (head solutions) - 1) ++ " steps"
+
+  let reversed = mkGraph (labNodes gr) ((\(a,b,c) -> (b,a,c)) <$> labEdges gr) :: HeightGr
+      asVector = DM.getMatrixAsVector input
+      nearest = sortOn snd $ filter (\(n, _level) -> asVector DV.! n == 'a') $ level eNode reversed
+  putStrLn $ "part 2: shortest path to any 'a' has " ++ show (snd (head nearest)) ++ " steps"
+
+sex :: Char -> Int
 sex 'S' = ord 'a'
 sex 'E' = ord 'z'
 sex  x  = ord  x
