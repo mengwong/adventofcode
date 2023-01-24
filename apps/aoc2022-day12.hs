@@ -21,10 +21,10 @@ main = do
                    | (nodeId,myelem) <- zip [0..] (DM.toList input)
                    , let (row, col) = nodeNtoRowCol input nodeId
                          mychar = sex myelem
-                         outN = [ (,go N input (row,col)) <$> d | let d = (\x -> x - mychar) . sex <$> getn N input (row,col) ]
-                         outS = [ (,go S input (row,col)) <$> d | let d = (\x -> x - mychar) . sex <$> getn S input (row,col) ]
-                         outE = [ (,go E input (row,col)) <$> d | let d = (\x -> x - mychar) . sex <$> getn E input (row,col) ]
-                         outW = [ (,go W input (row,col)) <$> d | let d = (\x -> x - mychar) . sex <$> getn W input (row,col) ]
+                         outN = [ (,go N input (row,col)) <$> d | let d = subtract mychar . sex <$> getn N input (row,col) ]
+                         outS = [ (,go S input (row,col)) <$> d | let d = subtract mychar . sex <$> getn S input (row,col) ]
+                         outE = [ (,go E input (row,col)) <$> d | let d = subtract mychar . sex <$> getn E input (row,col) ]
+                         outW = [ (,go W input (row,col)) <$> d | let d = subtract mychar . sex <$> getn W input (row,col) ]
                    ]
       sNode = fromJust $ elemIndex 'S' (DM.toList input)
       eNode = fromJust $ elemIndex 'E' (DM.toList input)
