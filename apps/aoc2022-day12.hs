@@ -9,7 +9,7 @@ import qualified Data.Matrix  as DM
 import Data.Maybe ( catMaybes, fromJust )
 import Data.List ( elemIndex, sortOn )
 import Data.Char ( ord )
-import Data.Graph.Inductive ( buildGr, mkGraph, esp, Gr, level, emap, labNodes, labEdges )
+import Data.Graph.Inductive ( buildGr, mkGraph, esp, Gr, level, emap, labNodes, labEdges, Node )
 
 -- | we construct a graph of character nodes, and height-delta edges.
 -- The graph represents permissible moves, based on climb capability:
@@ -17,9 +17,11 @@ import Data.Graph.Inductive ( buildGr, mkGraph, esp, Gr, level, emap, labNodes, 
 -- node IDs of the graph correspond to the index in the list of input
 -- elements. We also track those inputs in a Data.Matrix.
 
-type HeightGr = Gr   -- ^ FGL graph
-                Char -- ^ character
-                Int  -- ^ height delta
+type HeightGr = Gr    -- ^ FGL graph
+                Char  -- ^ character
+                Delta -- ^ height delta
+
+type Delta = Int
 
 -- | Most of the work in our program lies in setting up the neighbour relations.
 -- The heavy lifting of running actual graph algorithms is outsourced to FGL.
@@ -38,10 +40,11 @@ main = do
                          -- this becomes FGL's "Context" for a node.
                          -- As a matter of coding style, I choose /not/ to factor out the compass directions,
                          -- but leave 4 lines that say the same thing to spare the reader's cognitive burden.
-                         outN = [ getn N input (row,col) <&> sex .> subtract mychar .> (,go N input (row,col)) ]
-                         outS = [ getn S input (row,col) <&> sex .> subtract mychar .> (,go S input (row,col)) ]
-                         outE = [ getn E input (row,col) <&> sex .> subtract mychar .> (,go E input (row,col)) ]
-                         outW = [ getn W input (row,col) <&> sex .> subtract mychar .> (,go W input (row,col)) ]
+                         outN = [ getn N input (row,col) $| sex .| subtract mychar .| (,go N input (row,col)) ] :: [Maybe (Delta,Node)]
+                         outS = [ getn S input (row,col) $| sex .| subtract mychar .| (,go S input (row,col)) ]
+                         outE = [ getn E input (row,col) $| sex .| subtract mychar .| (,go E input (row,col)) ]
+                         outW = [ getn W input (row,col) $| sex .| subtract mychar .| (,go W input (row,col)) ]
+                         -- these operators are more conventionally written as <&> and .> but I'm a Unix guy so why not pipes?
                    ]
       -- the start and end nodes are labeled S and E
       sNode = fromJust $ elemIndex 'S' (DM.toList input)
@@ -60,13 +63,14 @@ main = do
   -- the smart approach reconceives the end node as the root of a tree, and we BFS the tree for an 'a' node
   let reversed = mkGraph (labNodes gr) ((\(a,b,c) -> (b,a,c)) <$> labEdges gr) :: HeightGr
       asVector = DM.getMatrixAsVector input
-      nearest = sortOn snd $ filter (\(n, _level) -> asVector DV.! n == 'a') $ level eNode reversed
-  putStrLn $ "part 2: shortest path to any 'a' has " ++ show (snd (head nearest)) ++ " steps (it's node " ++ show (fst $ head nearest) ++ ")."
-  -- putStrLn (asArrows input gr (solve (fst $ head nearest)))
+      byDist   = sortOn snd $ filter (\(n, _level) -> asVector DV.! n == 'a') $ level eNode reversed
+      (nearestA,distA) = head byDist
+  putStrLn $ "part 2: shortest path to any 'a' has " ++ show distA ++ " steps. It's node " ++ show nearestA ++ " at " ++ show (nodeNtoRowCol input nearestA) ++ "."
+  -- putStrLn (asArrows input gr (solve nearestA))
 
-  where (.>) = flip (.)
-        (<&>) = flip fmap
-        infixl 1 <&>
+  where (.|) = flip (.)
+        ($|) = flip fmap
+        infixl 1 $|
 
 -- | the node ID of the neighbour
 go :: Compass -> DM.Matrix a -> (Int, Int) -> Int
