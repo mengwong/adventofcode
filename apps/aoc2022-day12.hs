@@ -31,7 +31,7 @@ main = do
   -- putStrLn $ DM.prettyMatrix input
   let gr :: HeightGr
       gr = buildGr [ ( [], nodeId, myelem
-                     , filter ((<=1) . fst) $ catMaybes (outN ++ outE ++ outS ++ outW) ) -- reachable edges have height delta <= 1
+                     , filter ((<=1) . fst) $ catMaybes [outN, outE, outS, outW] ) -- reachable edges have height delta <= 1
                    | (nodeId,myelem) <- zip [0..] (DM.toList input)
                    , let (row, col) = nodeNtoRowCol input nodeId
                          mychar = sex myelem
@@ -40,10 +40,10 @@ main = do
                          -- this becomes FGL's "Context" for a node.
                          -- As a matter of coding style, I choose /not/ to factor out the compass directions,
                          -- but leave 4 lines that say the same thing to spare the reader's cognitive burden.
-                         outN = [ getn N input (row,col) $| sex .| subtract mychar .| (,go N input (row,col)) ] :: [Maybe (Delta,Node)]
-                         outS = [ getn S input (row,col) $| sex .| subtract mychar .| (,go S input (row,col)) ]
-                         outE = [ getn E input (row,col) $| sex .| subtract mychar .| (,go E input (row,col)) ]
-                         outW = [ getn W input (row,col) $| sex .| subtract mychar .| (,go W input (row,col)) ]
+                         outN = getn N input (row,col) $| sex .| subtract mychar .| (,go N input (row,col)) :: Maybe (Delta,Node)
+                         outS = getn S input (row,col) $| sex .| subtract mychar .| (,go S input (row,col))
+                         outE = getn E input (row,col) $| sex .| subtract mychar .| (,go E input (row,col))
+                         outW = getn W input (row,col) $| sex .| subtract mychar .| (,go W input (row,col))
                          -- these operators are more conventionally written as <&> and .> but I'm a Unix guy so why not pipes?
                    ]
       -- the start and end nodes are labeled S and E
@@ -63,7 +63,8 @@ main = do
   -- the smart approach reconceives the end node as the root of a tree, and we BFS the tree for an 'a' node
   let reversed = mkGraph (labNodes gr) ((\(a,b,c) -> (b,a,c)) <$> labEdges gr) :: HeightGr
       asVector = DM.getMatrixAsVector input
-      byDist   = sortOn snd $ filter (\(n, _level) -> asVector DV.! n == 'a') $ level eNode reversed
+      byDist   = filter (\(n, _level) -> asVector DV.! n == 'a') $
+                 level eNode reversed -- thanks, fgl
       (nearestA,distA) = head byDist
   putStrLn $ "part 2: shortest path to any 'a' has " ++ show distA ++ " steps. It's node " ++ show nearestA ++ " at " ++ show (nodeNtoRowCol input nearestA) ++ "."
   -- putStrLn (asArrows input gr (solve nearestA))
