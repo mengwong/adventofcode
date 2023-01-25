@@ -10,35 +10,44 @@ import Data.Maybe ( catMaybes, fromJust )
 import Data.List ( elemIndex, sortOn )
 import Data.Char ( ord )
 import Data.Graph.Inductive ( buildGr, mkGraph, esp, Gr, level, emap, labNodes, labEdges )
-import Data.List.Split (chunksOf)
 
--- we construct a graph of character nodes, and height-delta edges
-type HeightGr = Gr   -- FGL graph
+-- | we construct a graph of character nodes, and height-delta edges.
+-- The graph represents permissible moves, based on climb capability:
+-- climb maximum of one level up, jump any number of levels down. The
+-- node IDs of the graph correspond to the index in the list of input
+-- elements. We also track those inputs in a Data.Matrix.
+
+type HeightGr = Gr   -- ^ FGL graph
                 Char -- ^ character
                 Int  -- ^ height delta
 
+-- | Most of the work in our program lies in setting up the neighbour relations.
+-- The heavy lifting of running actual graph algorithms is outsourced to FGL.
 main :: IO ()
 main = do
   input <- DM.fromLists . lines <$> getContents
-  putStrLn $ DM.prettyMatrix input
-  -- construct an FGL graph of permissible moves, based on climb capability: max one level up, jump any number of levels down
+  -- putStrLn $ DM.prettyMatrix input
   let gr :: HeightGr
       gr = buildGr [ ( [], nodeId, myelem
-                     , filter ((<=1) . fst) $ catMaybes (outN ++ outE ++ outS ++ outW) ) -- reachable edges have delta <= 1
+                     , filter ((<=1) . fst) $ catMaybes (outN ++ outE ++ outS ++ outW) ) -- reachable edges have height delta <= 1
                    | (nodeId,myelem) <- zip [0..] (DM.toList input)
                    , let (row, col) = nodeNtoRowCol input nodeId
                          mychar = sex myelem
-                         -- compute the height deltas relative to the current cell
-                         outN = [ (,go N input (row,col)) <$> d | let d = subtract mychar . sex <$> getn N input (row,col) ]
-                         outS = [ (,go S input (row,col)) <$> d | let d = subtract mychar . sex <$> getn S input (row,col) ]
-                         outE = [ (,go E input (row,col)) <$> d | let d = subtract mychar . sex <$> getn E input (row,col) ]
-                         outW = [ (,go W input (row,col)) <$> d | let d = subtract mychar . sex <$> getn W input (row,col) ]
+                         -- compute the height deltas relative to the current cell.
+                         -- if we're at the border, the neighbour may be a Nothing.
+                         -- this becomes FGL's "Context" for a node.
+                         -- As a matter of coding style, I choose /not/ to factor out the compass directions,
+                         -- but leave 4 lines that say the same thing to spare the reader's cognitive burden.
+                         outN = [ getn N input (row,col) <&> sex .> subtract mychar .> (,go N input (row,col)) ]
+                         outS = [ getn S input (row,col) <&> sex .> subtract mychar .> (,go S input (row,col)) ]
+                         outE = [ getn E input (row,col) <&> sex .> subtract mychar .> (,go E input (row,col)) ]
+                         outW = [ getn W input (row,col) <&> sex .> subtract mychar .> (,go W input (row,col)) ]
                    ]
       -- the start and end nodes are labeled S and E
       sNode = fromJust $ elemIndex 'S' (DM.toList input)
       eNode = fromJust $ elemIndex 'E' (DM.toList input)
       -- given a certain start node, find a path based on edge length (not edge weight, which would call for Dijkstra's)
-      solve s = esp s eNode gr
+      solve s = esp s eNode gr -- thanks, fgl
       path = solve sNode
   putStrLn (asArrows input gr path)
   putStrLn $ "part 1: shortest path length = " ++ show (length path - 1)
@@ -52,13 +61,57 @@ main = do
   let reversed = mkGraph (labNodes gr) ((\(a,b,c) -> (b,a,c)) <$> labEdges gr) :: HeightGr
       asVector = DM.getMatrixAsVector input
       nearest = sortOn snd $ filter (\(n, _level) -> asVector DV.! n == 'a') $ level eNode reversed
-  putStrLn $ "part 2: shortest path to any 'a' has " ++ show (snd (head nearest)) ++ " steps"
+  putStrLn $ "part 2: shortest path to any 'a' has " ++ show (snd (head nearest)) ++ " steps (it's node " ++ show (fst $ head nearest) ++ ")."
+  -- putStrLn (asArrows input gr (solve (fst $ head nearest)))
+
+  where (.>) = flip (.)
+        (<&>) = flip fmap
+        infixl 1 <&>
+
+-- | the node ID of the neighbour
+go :: Compass -> DM.Matrix a -> (Int, Int) -> Int
+go N input (row,col) = rowColToNodeN input (row-1, col+0)
+go S input (row,col) = rowColToNodeN input (row+1, col+0)
+go E input (row,col) = rowColToNodeN input (row+0, col+1)
+go W input (row,col) = rowColToNodeN input (row+0, col-1)
 
 -- | the Start and End nodes are valued 'a' and 'z'
 sex :: Char -> Int
 sex 'S' = ord 'a'
 sex 'E' = ord 'z'
 sex  x  = ord  x
+
+-- | get the character of the neighbouring element, if there is one -- we might be at the border!
+getn :: Compass -> DM.Matrix a -> (Int, Int) -> Maybe a
+getn c input (row,col) =
+  case c of
+    N -> inbounds $ DM.getElem (row-1) (col+0) input
+    S -> inbounds $ DM.getElem (row+1) (col+0) input
+    E -> inbounds $ DM.getElem (row+0) (col+1) input
+    W -> inbounds $ DM.getElem (row+0) (col-1) input
+  where
+    inbounds :: a -> Maybe a
+    inbounds
+      | c == N , row > 1              = Just
+      | c == W , col > 1              = Just
+      | c == S , row < DM.nrows input = Just
+      | c == E , col < DM.ncols input = Just
+      | otherwise                     = const Nothing
+
+-- | we use compass directions to refer to neighbours
+data Compass = N | E | S | W
+  deriving (Eq, Show)
+
+-- | convert Node ID to (row,col)
+nodeNtoRowCol :: DM.Matrix a -> Int -> (Int, Int)
+nodeNtoRowCol input nodeId =
+  let row = nodeId `div` DM.ncols input + 1
+      col = nodeId `mod` DM.ncols input + 1 
+  in ( row, col )
+
+-- | convert (row,col) to Node ID
+rowColToNodeN :: DM.Matrix a -> (Int, Int) -> Int
+rowColToNodeN input (row, col) = (row - 1) * DM.ncols input + col - 1
 
 -- | show the arrows to match the original problem
 asArrows :: DM.Matrix Char -> HeightGr -> [Int] -> String
@@ -83,46 +136,6 @@ asArrows mtx gr path =
       | y2 < y1 = '^'
       | x2 > x1 = '>'
       | x2 < x1 = '<'
-      | otherwise = ' '
-
--- | we use compass directions to refer to neighbours
-data Compass = N | E | S | W
-  deriving (Eq, Show)
-
--- | convert Node ID to (row,col)
-nodeNtoRowCol :: DM.Matrix a -> Int -> (Int, Int)
-nodeNtoRowCol input nodeId =
-  let row = nodeId `div` DM.ncols input + 1
-      col = nodeId `mod` DM.ncols input + 1 
-  in ( row, col )
-
--- | convert (row,col) to Node ID
-rowColToNodeN :: DM.Matrix a -> (Int, Int) -> Int
-rowColToNodeN input (row, col) = (row - 1) * DM.ncols input + col - 1
-
--- | get the character of the neighbouring element, if there is one -- we might be at the border!
-getn :: Compass -> DM.Matrix a -> (Int, Int) -> Maybe a
-getn c input (row,col) =
-  case c of
-    N -> inbounds $ DM.getElem (row-1) (col+0) input
-    S -> inbounds $ DM.getElem (row+1) (col+0) input
-    E -> inbounds $ DM.getElem (row+0) (col+1) input
-    W -> inbounds $ DM.getElem (row+0) (col-1) input
-  where
-    inbounds :: a -> Maybe a
-    inbounds
-      | c == N , row > 1              = Just
-      | c == W , col > 1              = Just
-      | c == S , row < DM.nrows input = Just
-      | c == E , col < DM.ncols input = Just
-      | otherwise                     = const Nothing
-
--- | return the node ID of the neighbour
-go :: Compass -> DM.Matrix a -> (Int, Int) -> Int
-go N input (row,col) = rowColToNodeN input (row-1, col+0)
-go S input (row,col) = rowColToNodeN input (row+1, col+0)
-go E input (row,col) = rowColToNodeN input (row+0, col+1)
-go W input (row,col) = rowColToNodeN input (row+0, col-1)
-
+      | otherwise = error "unreachable state in asArrows"
 
 
