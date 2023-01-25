@@ -33,19 +33,18 @@ main = do
   -- putStrLn $ DM.prettyMatrix input
   let gr :: HeightGr
       gr = buildGr [ ( [], nodeId, myelem
-                     , mapMaybe outdir [N,E,S,W] ) -- reachable edges have height delta <= 1
+                     , mapMaybe deltaContext [N,E,S,W] )
                    | (nodeId,myelem) <- zip [0..] (DM.toList input)
                    , let (row, col) = nodeNtoRowCol input nodeId
                          mychar = sex myelem
                          -- compute the height deltas relative to the current cell.
                          -- if we're at the border, the neighbour may be a Nothing.
                          -- this becomes FGL's "Context" for a node.
-                         outdir dir = [ (delta, go dir input (row,col))
-                                      | n <- getn dir input (row,col)
-                                      , let delta = sex n & subtract mychar
-                                      , delta <= 1
-                                      ] -- thanks, MonadComprehensions
-                         -- these operators are more conventionally written as <&> and .> but I'm a Unix guy so why not pipes?
+                         deltaContext dir = [ (delta, go dir input (row,col))
+                                            | n <- getn dir input (row,col)
+                                            , let delta = sex n & subtract mychar
+                                            , delta <= 1 -- reachable edges have height delta <= 1
+                                            ] :: Maybe (Delta,Node) -- thanks, MonadComprehensions
                    ]
       -- the start and end nodes are labeled S and E
       sNode = fromJust $ elemIndex 'S' (DM.toList input)
