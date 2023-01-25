@@ -1,15 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE MonadComprehensions #-}
 
 module Main where
 
 import qualified Data.Map as Map
 import qualified Data.Vector  as DV
 import qualified Data.Matrix  as DM
-import Data.Maybe ( catMaybes, fromJust )
+import Data.Maybe ( mapMaybe, fromJust )
 import Data.List ( elemIndex, sortOn )
 import Data.Char ( ord )
 import Data.Graph.Inductive ( buildGr, mkGraph, esp, Gr, level, emap, labNodes, labEdges, Node )
+import Data.Function ((&))
 
 -- | we construct a graph of character nodes, and height-delta edges.
 -- The graph represents permissible moves, based on climb capability:
@@ -31,19 +33,18 @@ main = do
   -- putStrLn $ DM.prettyMatrix input
   let gr :: HeightGr
       gr = buildGr [ ( [], nodeId, myelem
-                     , filter ((<=1) . fst) $ catMaybes [outN, outE, outS, outW] ) -- reachable edges have height delta <= 1
+                     , mapMaybe outdir [N,E,S,W] ) -- reachable edges have height delta <= 1
                    | (nodeId,myelem) <- zip [0..] (DM.toList input)
                    , let (row, col) = nodeNtoRowCol input nodeId
                          mychar = sex myelem
                          -- compute the height deltas relative to the current cell.
                          -- if we're at the border, the neighbour may be a Nothing.
                          -- this becomes FGL's "Context" for a node.
-                         -- As a matter of coding style, I choose /not/ to factor out the compass directions,
-                         -- but leave 4 lines that say the same thing to spare the reader's cognitive burden.
-                         outN = getn N input (row,col) $| sex .| subtract mychar .| (,go N input (row,col)) :: Maybe (Delta,Node)
-                         outS = getn S input (row,col) $| sex .| subtract mychar .| (,go S input (row,col))
-                         outE = getn E input (row,col) $| sex .| subtract mychar .| (,go E input (row,col))
-                         outW = getn W input (row,col) $| sex .| subtract mychar .| (,go W input (row,col))
+                         outdir dir = [ (delta, go dir input (row,col))
+                                      | n <- getn dir input (row,col)
+                                      , let delta = sex n & subtract mychar
+                                      , delta <= 1
+                                      ] -- thanks, MonadComprehensions
                          -- these operators are more conventionally written as <&> and .> but I'm a Unix guy so why not pipes?
                    ]
       -- the start and end nodes are labeled S and E
@@ -68,10 +69,6 @@ main = do
       (nearestA,distA) = head byDist
   putStrLn $ "part 2: shortest path to any 'a' has " ++ show distA ++ " steps. It's node " ++ show nearestA ++ " at " ++ show (nodeNtoRowCol input nearestA) ++ "."
   -- putStrLn (asArrows input gr (solve nearestA))
-
-  where (.|) = flip (.)
-        ($|) = flip fmap
-        infixl 1 $|
 
 -- | the node ID of the neighbour
 go :: Compass -> DM.Matrix a -> (Int, Int) -> Int
