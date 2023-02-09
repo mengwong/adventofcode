@@ -1,26 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE MonadComprehensions, ParallelListComp #-}
 
 module Main where
 
-import qualified Data.Map     as Map
-import qualified Data.Vector  as DV
-import qualified Data.Matrix  as DM
 import qualified Data.Text   as T
-import           Data.Tree
-import Data.Maybe ( mapMaybe, fromJust )
-import Data.List ( elemIndex, sortOn )
+import Data.Maybe ( fromJust )
+import Data.List ( elemIndex, sort, intercalate )
 import Data.List.Split ( chunksOf )
-import Data.Ord
-import Data.Graph.Inductive ( buildGr, mkGraph, esp, Gr, level, emap, labNodes, labEdges, Node )
-import Data.Function ((&))
 import Text.Megaparsec
-import Text.Megaparsec.Char
+    ( (<|>), parseMaybe, between, sepBy, some, Parsec )
+import Text.Megaparsec.Char ( digitChar )
 
 type Parser = Parsec () String
 
 data Nested = I Int | N [Nested]
-  deriving (Eq, Show)
+  deriving (Eq)
 
 instance Ord Nested where
   compare (I l)    (I r)    = compare l r
@@ -34,6 +27,10 @@ instance Ord Nested where
   compare (I l)    (N rs)   = compare (N [I l]) (N rs)
   compare (N ls)   (I r )   = compare (N ls) (N [I r])
 
+instance Show Nested where
+  show (I n)  = show n
+  show (N ns) = "[" ++ intercalate "," (show <$> ns) ++ "]"
+
 pNested :: Parser [Nested]
 pNested = between "[" "]" (pInner `sepBy` ",")
   where
@@ -44,15 +41,24 @@ pNested = between "[" "]" (pInner `sepBy` ",")
 
 main :: IO ()
 main = do
-  input <- fmap (\[a,b] -> (fromJust a, fromJust b))
-           . chunksOf 2
-           . fmap (parseMaybe pNested)
+  input <- fmap (fromJust . parseMaybe pNested)
            . filter (not . null)
            . lines <$> getContents
-  print input
-  let results = [ (index, answer $ compare l r)
-                | (l,r) <- input
-                | index <- [1..]]
+
+  let results = zip [1..] [ answer $ compare l r
+                          | (l,r) <- fmap (\[a,b] -> (a, b))
+                            . chunksOf 2
+                            $ input
+                          ]
+      n2 = [N [N [I 2]]]
+      n6 = [N [N [I 6]]]
+      part2 = sort $ n2 : n6 : input
+
   print $ sum $ fst <$> filter snd results
+  -- putStrLn $ unlines $ show <$> part2
+
+  print ( maybe 0 (+1) (n2 `elemIndex` part2)
+        * maybe 0 (+1) (n6 `elemIndex` part2) )
+
   where answer LT = True
         answer GT = False
